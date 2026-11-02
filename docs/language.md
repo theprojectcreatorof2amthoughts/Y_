@@ -10,9 +10,10 @@ The runtime has numbers, strings, booleans (`yes` and `no`), `void`, procedures,
 stash name = "Ada"
 stash score = 96
 !$session_count = 1
+stash !${score-level@v2} = 96
 ```
 
-`stash` creates a function-local variable. Ordinary assignment updates an existing variable or creates a global when no variable exists. `!$name` is the explicit custom-variable form and uses the same storage rules.
+`stash` creates a function-local variable initialized to `void`; `stash name = value` provides an initial value. Ordinary assignment updates an existing variable or creates one in the current environment when no variable exists. `!$name` is the explicit custom-variable form and uses the same storage rules. Wrap a custom name in `${...}` after `!$` to include punctuation, spaces, or operator characters; escape `}` and `\` with a backslash. For example, `stash !${score-level@v2} = 96` is valid.
 
 ## Functions and control flow
 
@@ -32,11 +33,20 @@ repeatwhile attempts > 0 execute
 done
 ```
 
-`define` declares a procedure with positional parameters and closures over its defining environment. `give` returns a value. `when` starts a branch, `doit` starts its body, `otherwise` is optional, and `done` closes it. `repeatwhile` starts a loop body with `execute`; `escape` exits a loop. Each loop has a safety limit of one million iterations.
+`define procedure_name(...)` declares a procedure with positional parameters and closures over its defining environment. `give` returns a value. `when` starts a branch, `doit` starts its body, `otherwise` is optional, and `done` closes it. `repeatwhile` starts a loop body with `execute`; `escape` exits a loop. Each loop has a safety limit of one million iterations.
 
 ## Operators
 
 Arithmetic: `+`, `-`, `*`, `/`, `%`. Comparisons: `==`, `~=`, `<`, `<=`, `>`, `>=`. Boolean operators: `both`, `either`, `invert`. `+` also concatenates two strings. Only `void` and `no` are falsey.
+
+`name define = yes` checks whether a variable has been defined, even if its value is `void`; use `no` to check that it has not been defined. This operator does not evaluate the variable's value:
+
+```y_
+stash status
+when status define = yes doit
+    writescrn >^ "status exists"
+done
+```
 
 ## Custom statements and libraries
 

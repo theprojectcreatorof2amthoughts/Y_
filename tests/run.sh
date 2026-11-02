@@ -2,7 +2,7 @@
 set -euo pipefail
 
 actual="$(./y_ tests/smoke.y)"
-expected="$(printf '10\nabab\n42\nyes\nescaped\nvoid')"
+expected="$(printf '10\nabab\n42\nyes\nescaped\nvoid\nsymbol-name-ok\nescaped-symbol-name-ok\ndeclaration-check-ok')"
 
 if [[ "$actual" != "$expected" ]]; then
     printf 'unexpected smoke-test output\nexpected:\n%s\nactual:\n%s\n' "$expected" "$actual" >&2

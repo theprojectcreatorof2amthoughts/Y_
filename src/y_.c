@@ -102,8 +102,35 @@ static void tokenize(Parser *parser, const char *source) {
         Token token = { .line = line };
         if (cursor[0] == '!' && cursor[1] == '$') {
             cursor += 2;
+            if (*cursor == '{') {
+                ++cursor;
+                size_t capacity = strlen(cursor) + 1;
+                char *name = malloc(capacity);
+                if (!name) { fputs("out of memory\n", stderr); exit(2); }
+                size_t length = 0;
+                while (*cursor && *cursor != '}' && *cursor != '\n') {
+                    if (*cursor == '\\' && (cursor[1] == '}' || cursor[1] == '\\')) ++cursor;
+                    name[length++] = *cursor++;
+                }
+                if (*cursor != '}') {
+                    free(name);
+                    report_error(line, "expected '}' to close custom variable name");
+                    break;
+                }
+                ++cursor;
+                if (length == 0) {
+                    free(name);
+                    report_error(line, "custom variable name cannot be empty");
+                    break;
+                }
+                name[length] = '\0';
+                token.kind = T_CUSTOM;
+                token.text = name;
+                add_token(parser, token);
+                continue;
+            }
             const char *start = cursor;
-            if (!is_name_start(*cursor)) { report_error(line, "expected a name after !$ "); break; }
+            if (!is_name_start(*cursor)) { report_error(line, "expected a name after !$ or a braced name after !${"); break; }
             while (is_name_char(*cursor)) ++cursor;
             token.kind = T_CUSTOM;
             token.text = copy_range(start, (size_t)(cursor - start));
@@ -253,6 +280,11 @@ static Expr *parse_prefix(Parser *p) {
 
 static int precedence(Parser *p, const char **op) {
     TokenKind kind = peek(p)->kind;
+    if (kind == T_NAME && strcmp(peek(p)->text, "define") == 0 &&
+        p->at + 1 < p->count && p->items[p->at + 1].kind == T_ASSIGN) {
+        *op = "define=";
+        return 3;
+    }
     if (kind == T_NAME && (strcmp(peek(p)->text, "either") == 0 || strcmp(peek(p)->text, "both") == 0)) {
         *op = peek(p)->text; return strcmp(*op, "either") == 0 ? 1 : 2;
     }
@@ -272,7 +304,8 @@ static Expr *parse_expression(Parser *p, int minimum) {
         const char *op = NULL;
         int level = precedence(p, &op);
         if (level < minimum || level == 0) break;
-        ++p->at;
+        if (strcmp(op, "define=") == 0) p->at += 2;
+        else ++p->at;
         Expr *right = parse_expression(p, level + 1);
         Expr *binary = new_expr(E_BINARY, left->line);
         binary->as.binary.op = (char *)op;
@@ -291,15 +324,18 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         Stmt *stmt = NULL;
         Token start = *peek(p);
         if (match_keyword(p, "stash")) {
-            Token name = *peek(p);
-            if (!expect(p, T_NAME, "expected a variable name after stash")) break;
+            if (!match(p, T_NAME) && !match(p, T_CUSTOM)) {
+                report_error(peek(p)->line, "expected a variable name after stash");
+                break;
+            }
+            Token name = *previous(p);
             stmt = new_stmt(S_LOCAL, start.line); stmt->as.variable.name = name.text;
             if (match(p, T_ASSIGN)) stmt->as.variable.value = parse_expression(p, 1);
         } else if (match_keyword(p, "define")) {
             Token name = *peek(p);
             if (!expect(p, T_NAME, "expected a procedure name")) break;
             stmt = new_stmt(S_FUNCTION, start.line); stmt->as.function.name = name.text;
-            expect(p, T_LPAREN, "expected '(' after function name");
+            expect(p, T_LPAREN, "expected '(' after procedure name");
             if (!match(p, T_RPAREN)) {
                 do {
                     Token param = *peek(p);
@@ -474,8 +510,21 @@ static Value evaluate(Expr *expr, Env *env) {
         double number; if (!number_value(right, &number, expr->line)) return nil_value();
         return (Value){ .kind = V_NUMBER, .as.number = -number };
     }
-    Value left = evaluate(expr->as.binary.left, env);
     const char *op = expr->as.binary.op;
+    if (strcmp(op, "define=") == 0) {
+        if (expr->as.binary.left->kind != E_VARIABLE) {
+            report_error(expr->line, "define = expects a variable name on its left");
+            return nil_value();
+        }
+        Value expected = evaluate(expr->as.binary.right, env);
+        if (expected.kind != V_BOOL) {
+            report_error(expr->line, "define = expects yes or no on its right");
+            return nil_value();
+        }
+        bool is_declared = find_value(env, expr->as.binary.left->as.name) != NULL;
+        return (Value){ .kind = V_BOOL, .as.boolean = is_declared == expected.as.boolean };
+    }
+    Value left = evaluate(expr->as.binary.left, env);
     if (strcmp(op, "both") == 0) return truthy(left) ? evaluate(expr->as.binary.right, env) : left;
     if (strcmp(op, "either") == 0) return truthy(left) ? left : evaluate(expr->as.binary.right, env);
     Value right = evaluate(expr->as.binary.right, env);
