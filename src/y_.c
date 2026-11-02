@@ -318,7 +318,7 @@ static Expr *parse_expression(Parser *p, int minimum) {
 
 static Stmt *parse_block(Parser *p, bool stop_at_else) {
     Stmt *head = NULL, **tail = &head;
-    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "otherwise")) && !failed) {
+    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "else")) && !failed) {
         if (match(p, T_SEMI)) continue;
         size_t before = p->at;
         Stmt *stmt = NULL;
@@ -352,7 +352,7 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
             stmt->as.conditional.condition = parse_expression(p, 1);
             expect_keyword(p, "doit");
             stmt->as.conditional.yes = parse_block(p, true);
-            if (match_keyword(p, "otherwise")) stmt->as.conditional.no = parse_block(p, false);
+            if (match_keyword(p, "else")) stmt->as.conditional.no = parse_block(p, false);
             expect_keyword(p, "done");
         } else if (match_keyword(p, "repeatwhile")) {
             stmt = new_stmt(S_WHILE, start.line);

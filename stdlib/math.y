@@ -1,7 +1,7 @@
 define math_min(left, right)
     when left < right doit
         give left
-    otherwise
+    else
         give right
     done
 done
@@ -9,7 +9,7 @@ done
 define math_max(left, right)
     when left > right doit
         give left
-    otherwise
+    else
         give right
     done
 done
@@ -17,10 +17,10 @@ done
 define math_clamp(value, low, high)
     when value < low doit
         give low
-    otherwise
+    else
         when value > high doit
             give high
-        otherwise
+        else
             give value
         done
     done
@@ -29,10 +29,10 @@ done
 define math_sign(value)
     when value < 0 doit
         give -1
-    otherwise
+    else
         when value > 0 doit
             give 1
-        otherwise
+        else
             give 0
         done
     done

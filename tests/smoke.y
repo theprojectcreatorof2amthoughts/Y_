@@ -15,7 +15,7 @@ writescrn >^ repeated
 writescrn >^ memread(!$buffer, 1)
 when truth either no doit
 	writescrn >^ truth
-otherwise
+else
 	writescrn >^ no
 done
 repeatwhile yes execute
@@ -25,17 +25,17 @@ done
 writescrn >^ void
 	when !${score-level@v2} == 7 doit
 		writescrn >^ "symbol-name-ok"
-	otherwise
+	else
 		writescrn >^ "symbol-name-failed"
 	done
 	when !${score level+@v\}2} == 8 doit
 		writescrn >^ "escaped-symbol-name-ok"
-	otherwise
+	else
 		writescrn >^ "escaped-symbol-name-failed"
 	done
 	stash inclibr
 	when inclibr define = yes doit
 		writescrn >^ "declaration-check-ok"
-	otherwise
+	else
 		writescrn >^ "declaration-check-failed"
 	done

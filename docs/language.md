@@ -21,7 +21,7 @@ stash !${score-level@v2} = 96
 define classify(score)
     when score >= 90 doit
         give "excellent"
-    otherwise
+    else
         give "keep going"
     done
 done
@@ -33,7 +33,7 @@ repeatwhile attempts > 0 execute
 done
 ```
 
-`define procedure_name(...)` declares a procedure with positional parameters and closures over its defining environment. `give` returns a value. `when` starts a branch, `doit` starts its body, `otherwise` is optional, and `done` closes it. `repeatwhile` starts a loop body with `execute`; `escape` exits a loop. Each loop has a safety limit of one million iterations.
+`define procedure_name(...)` declares a procedure with positional parameters and closures over its defining environment. `give` returns a value. `when` starts a branch, `doit` starts its body, `else` is optional, and `done` closes it. `repeatwhile` starts a loop body with `execute`; `escape` exits a loop. Each loop has a safety limit of one million iterations.
 
 ## Operators
 
