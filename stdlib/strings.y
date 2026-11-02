@@ -1,17 +1,17 @@
-function string_join(left, right)
-    return left + right
-end
+define string_join(left, right)
+    give left + right
+done
 
-function string_repeat(text, count)
-    local output = ""
-    local index = 0
-    while index < count do
+define string_repeat(text, count)
+    stash output = ""
+    stash index = 0
+    repeatwhile index < count execute
         output = output + text
         index = index + 1
-    end
-    return output
-end
+    done
+    give output
+done
 
-function string_is_empty(text)
-    return text == ""
-end
+define string_is_empty(text)
+    give text == ""
+done

@@ -95,7 +95,7 @@ static void tokenize(Parser *parser, const char *source) {
     while (*cursor && !failed) {
         if (*cursor == '\n') { ++line; ++cursor; continue; }
         if (isspace((unsigned char)*cursor)) { ++cursor; continue; }
-        if (cursor[0] == '-' && cursor[1] == '-') {
+        if (cursor[0] == '#' && cursor[1] == '#') {
             while (*cursor && *cursor != '\n') ++cursor;
             continue;
         }
@@ -212,9 +212,9 @@ static Expr *parse_primary(Parser *p) {
     if (match(p, T_CUSTOM) || match(p, T_NAME)) {
         bool custom = previous(p)->kind == T_CUSTOM;
         char *name = previous(p)->text;
-        if (!custom && strcmp(name, "true") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_BOOL; e->as.value.as.boolean = true; return e; }
-        if (!custom && strcmp(name, "false") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_BOOL; e->as.value.as.boolean = false; return e; }
-        if (!custom && strcmp(name, "nil") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_NIL; return e; }
+        if (!custom && strcmp(name, "yes") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_BOOL; e->as.value.as.boolean = true; return e; }
+        if (!custom && strcmp(name, "no") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_BOOL; e->as.value.as.boolean = false; return e; }
+        if (!custom && strcmp(name, "void") == 0) { Expr *e = new_expr(E_VALUE, token.line); e->as.value.kind = V_NIL; return e; }
         Expr *e = new_expr(E_VARIABLE, token.line); e->as.name = name; return e;
     }
     if (match(p, T_LPAREN)) {
@@ -227,10 +227,10 @@ static Expr *parse_primary(Parser *p) {
 }
 
 static Expr *parse_prefix(Parser *p) {
-    if (match(p, T_MINUS) || match_keyword(p, "not")) {
+    if (match(p, T_MINUS) || match_keyword(p, "invert")) {
         Token *op = previous(p);
         Expr *e = new_expr(E_UNARY, op->line);
-        e->as.unary.op = op->kind == T_MINUS ? "-" : "not";
+        e->as.unary.op = op->kind == T_MINUS ? "-" : "invert";
         e->as.unary.right = parse_expression(p, 7);
         return e;
     }
@@ -253,8 +253,8 @@ static Expr *parse_prefix(Parser *p) {
 
 static int precedence(Parser *p, const char **op) {
     TokenKind kind = peek(p)->kind;
-    if (kind == T_NAME && (strcmp(peek(p)->text, "or") == 0 || strcmp(peek(p)->text, "and") == 0)) {
-        *op = peek(p)->text; return strcmp(*op, "or") == 0 ? 1 : 2;
+    if (kind == T_NAME && (strcmp(peek(p)->text, "either") == 0 || strcmp(peek(p)->text, "both") == 0)) {
+        *op = peek(p)->text; return strcmp(*op, "either") == 0 ? 1 : 2;
     }
     switch (kind) {
         case T_EQ: *op = "=="; return 3; case T_NE: *op = "~="; return 3;
@@ -285,19 +285,19 @@ static Expr *parse_expression(Parser *p, int minimum) {
 
 static Stmt *parse_block(Parser *p, bool stop_at_else) {
     Stmt *head = NULL, **tail = &head;
-    while (peek(p)->kind != T_EOF && !keyword(p, "end") && !(stop_at_else && keyword(p, "else")) && !failed) {
+    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "otherwise")) && !failed) {
         if (match(p, T_SEMI)) continue;
         size_t before = p->at;
         Stmt *stmt = NULL;
         Token start = *peek(p);
-        if (match_keyword(p, "local")) {
+        if (match_keyword(p, "stash")) {
             Token name = *peek(p);
-            if (!expect(p, T_NAME, "expected a variable name after local")) break;
+            if (!expect(p, T_NAME, "expected a variable name after stash")) break;
             stmt = new_stmt(S_LOCAL, start.line); stmt->as.variable.name = name.text;
             if (match(p, T_ASSIGN)) stmt->as.variable.value = parse_expression(p, 1);
-        } else if (match_keyword(p, "function")) {
+        } else if (match_keyword(p, "define")) {
             Token name = *peek(p);
-            if (!expect(p, T_NAME, "expected a function name")) break;
+            if (!expect(p, T_NAME, "expected a procedure name")) break;
             stmt = new_stmt(S_FUNCTION, start.line); stmt->as.function.name = name.text;
             expect(p, T_LPAREN, "expected '(' after function name");
             if (!match(p, T_RPAREN)) {
@@ -310,25 +310,25 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
                 expect(p, T_RPAREN, "expected ')' after parameters");
             }
             stmt->as.function.body = parse_block(p, false);
-            expect_keyword(p, "end");
-        } else if (match_keyword(p, "if")) {
+            expect_keyword(p, "done");
+        } else if (match_keyword(p, "when")) {
             stmt = new_stmt(S_IF, start.line);
             stmt->as.conditional.condition = parse_expression(p, 1);
-            expect_keyword(p, "then");
+            expect_keyword(p, "doit");
             stmt->as.conditional.yes = parse_block(p, true);
-            if (match_keyword(p, "else")) stmt->as.conditional.no = parse_block(p, false);
-            expect_keyword(p, "end");
-        } else if (match_keyword(p, "while")) {
+            if (match_keyword(p, "otherwise")) stmt->as.conditional.no = parse_block(p, false);
+            expect_keyword(p, "done");
+        } else if (match_keyword(p, "repeatwhile")) {
             stmt = new_stmt(S_WHILE, start.line);
             stmt->as.loop.condition = parse_expression(p, 1);
-            expect_keyword(p, "do");
+            expect_keyword(p, "execute");
             stmt->as.loop.body = parse_block(p, false);
-            expect_keyword(p, "end");
-        } else if (match_keyword(p, "return")) {
+            expect_keyword(p, "done");
+        } else if (match_keyword(p, "give")) {
             stmt = new_stmt(S_RETURN, start.line);
-            if (peek(p)->kind != T_SEMI && !keyword(p, "end") && peek(p)->kind != T_EOF)
+            if (peek(p)->kind != T_SEMI && !keyword(p, "done") && peek(p)->kind != T_EOF)
                 stmt->as.returned.value = parse_expression(p, 1);
-        } else if (match_keyword(p, "break")) {
+        } else if (match_keyword(p, "escape")) {
             stmt = new_stmt(S_BREAK, start.line);
         } else if (match_keyword(p, "writescrn")) {
             stmt = new_stmt(S_OUTPUT, start.line);
@@ -388,10 +388,10 @@ static bool truthy(Value value) { return value.kind != V_NIL && !(value.kind == 
 
 static void write_value(FILE *out, Value value) {
     switch (value.kind) {
-        case V_NIL: fputs("nil", out); break;
+        case V_NIL: fputs("void", out); break;
         case V_NUMBER: if (value.as.number == floor(value.as.number)) fprintf(out, "%.0f", value.as.number); else fprintf(out, "%.15g", value.as.number); break;
         case V_STRING: fputs(value.as.string, out); break;
-        case V_BOOL: fputs(value.as.boolean ? "true" : "false", out); break;
+        case V_BOOL: fputs(value.as.boolean ? "yes" : "no", out); break;
         case V_FUNCTION: fputs("<function>", out); break;
         case V_MEMORY: fprintf(out, "<memory:%zu>", value.as.memory->size); break;
     }
@@ -450,8 +450,8 @@ static Value call_function(Expr *expr, Env *env) {
             char buffer[128];
             if (args[0].kind == V_STRING) { Value result = args[0]; free(args); return result; }
             if (args[0].kind == V_NUMBER) snprintf(buffer, sizeof(buffer), "%.15g", args[0].as.number);
-            else if (args[0].kind == V_BOOL) snprintf(buffer, sizeof(buffer), "%s", args[0].as.boolean ? "true" : "false");
-            else snprintf(buffer, sizeof(buffer), "nil");
+            else if (args[0].kind == V_BOOL) snprintf(buffer, sizeof(buffer), "%s", args[0].as.boolean ? "yes" : "no");
+            else snprintf(buffer, sizeof(buffer), "void");
             Value result = { .kind = V_STRING, .as.string = copy_range(buffer, strlen(buffer)) }; free(args); return result;
         }
     }
@@ -470,14 +470,14 @@ static Value evaluate(Expr *expr, Env *env) {
     if (expr->kind == E_CALL) return call_function(expr, env);
     if (expr->kind == E_UNARY) {
         Value right = evaluate(expr->as.unary.right, env);
-        if (strcmp(expr->as.unary.op, "not") == 0) return (Value){ .kind = V_BOOL, .as.boolean = !truthy(right) };
+        if (strcmp(expr->as.unary.op, "invert") == 0) return (Value){ .kind = V_BOOL, .as.boolean = !truthy(right) };
         double number; if (!number_value(right, &number, expr->line)) return nil_value();
         return (Value){ .kind = V_NUMBER, .as.number = -number };
     }
     Value left = evaluate(expr->as.binary.left, env);
     const char *op = expr->as.binary.op;
-    if (strcmp(op, "and") == 0) return truthy(left) ? evaluate(expr->as.binary.right, env) : left;
-    if (strcmp(op, "or") == 0) return truthy(left) ? left : evaluate(expr->as.binary.right, env);
+    if (strcmp(op, "both") == 0) return truthy(left) ? evaluate(expr->as.binary.right, env) : left;
+    if (strcmp(op, "either") == 0) return truthy(left) ? left : evaluate(expr->as.binary.right, env);
     Value right = evaluate(expr->as.binary.right, env);
     if (strcmp(op, "==") == 0 || strcmp(op, "~=") == 0) {
         bool equal = left.kind == right.kind;

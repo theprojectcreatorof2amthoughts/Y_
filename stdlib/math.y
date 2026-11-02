@@ -1,39 +1,39 @@
-function math_min(left, right)
-    if left < right then
-        return left
-    else
-        return right
-    end
-end
+define math_min(left, right)
+    when left < right doit
+        give left
+    otherwise
+        give right
+    done
+done
 
-function math_max(left, right)
-    if left > right then
-        return left
-    else
-        return right
-    end
-end
+define math_max(left, right)
+    when left > right doit
+        give left
+    otherwise
+        give right
+    done
+done
 
-function math_clamp(value, low, high)
-    if value < low then
-        return low
-    else
-        if value > high then
-            return high
-        else
-            return value
-        end
-    end
-end
+define math_clamp(value, low, high)
+    when value < low doit
+        give low
+    otherwise
+        when value > high doit
+            give high
+        otherwise
+            give value
+        done
+    done
+done
 
-function math_sign(value)
-    if value < 0 then
-        return -1
-    else
-        if value > 0 then
-            return 1
-        else
-            return 0
-        end
-    end
-end
+define math_sign(value)
+    when value < 0 doit
+        give -1
+    otherwise
+        when value > 0 doit
+            give 1
+        otherwise
+            give 0
+        done
+    done
+done

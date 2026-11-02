@@ -1,6 +1,6 @@
 # Y_
 
-Y_ is a modular scripting language implemented in portable C11. It combines Lua-like control flow and functions with custom forms for output, memory, imports, and variables.
+Y_ is a modular scripting language implemented in portable C11. It uses its own vocabulary for procedures, branching, loops, and values, alongside custom output, memory, import, and variable forms.
 
 ## Build and run
 
@@ -16,19 +16,19 @@ Run `./y_` without a file to start the interactive prompt. No third-party librar
 ## Language
 
 ```lua
-local greeting = "hello"
+stash greeting = "hello"
 
-function announce(message)
+define announce(message)
 	writescrn >^ message
-end
+done
 
 announce(greeting)
 
 !$count = 3
-while !$count > 0 do
+repeatwhile !$count > 0 execute
 	writescrn >^ !$count
 	!$count = !$count - 1
-end
+done
 
 memdesig !$scratch, 16
 memwrite(!$scratch, 0, 72)
@@ -37,7 +37,7 @@ writescrn >^ memread(!$scratch, 0)
 
 `writescrn >^ expression` prints a value. `!$name` reads a custom variable and `!$name = expression` assigns it. `memdesig !$name, size` allocates a zeroed byte buffer; `memread(buffer, index)` and `memwrite(buffer, index, byte)` access it. Indices are zero-based.
 
-`!#libinc "path.y"` runs another source file in the current variable environment. Paths are relative to the process working directory. Comments start with `--`. Function definitions, `local`, `return`, `if` / `then` / `else` / `end`, and `while` / `do` / `end` use Lua-like syntax. Values include numbers, strings, booleans, and `nil`; operators include arithmetic, comparisons, `and`, `or`, and `not`.
+`!#libinc "path.y"` runs another source file in the current variable environment. Paths are relative to the process working directory. Comments start with `##`. Y_ uses `stash` for local variables, `define` for procedures, `give` for returned values, `when` / `doit` / `otherwise` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`.
 
 ## Project layout
 
