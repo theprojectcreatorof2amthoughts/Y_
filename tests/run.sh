@@ -14,4 +14,14 @@ if ./y_ tests/invalid_memory.y >/dev/null 2>&1; then
     exit 1
 fi
 
+error_output_file="$(mktemp)"
+trap 'rm -f "$error_output_file"' EXIT
+normal_output="$(./y_ tests/error_output.y 2>"$error_output_file")"
+error_output="$(<"$error_output_file")"
+
+if [[ "$normal_output" != "normal message" || "$error_output" != "diagnostic message" ]]; then
+    printf 'errstate output did not use stderr exclusively\nstdout: %s\nstderr: %s\n' "$normal_output" "$error_output" >&2
+    exit 1
+fi
+
 printf 'Y_ smoke and error-path tests passed\n'

@@ -12,7 +12,7 @@
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
-    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_LIBINC
+    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_ERROR_OUTPUT, T_LIBINC
 } TokenKind;
 
 typedef struct { TokenKind kind; char *text; double number; int line; } Token;
@@ -44,7 +44,7 @@ struct Expr {
     } as;
 };
 
-typedef enum { S_LOCAL, S_ASSIGN, S_EXPR, S_OUTPUT, S_MEMORY, S_INCLUDE,
+typedef enum { S_LOCAL, S_ASSIGN, S_EXPR, S_OUTPUT, S_ERROR_OUTPUT, S_MEMORY, S_INCLUDE,
                S_FUNCTION, S_RETURN, S_IF, S_WHILE, S_BREAK } StmtKind;
 struct Stmt {
     StmtKind kind;
@@ -189,7 +189,11 @@ static void tokenize(Parser *parser, const char *source) {
             case '=': if (*cursor == '=') { ++cursor; token.kind = T_EQ; } else token.kind = T_ASSIGN; break;
                 case '~': if (*cursor == '=') { ++cursor; token.kind = T_NE; } else { report_error(line, "expected ~="); continue; } break;
             case '!': if (*cursor == '=') { ++cursor; token.kind = T_NE; } else { report_error(line, "expected !="); continue; } break;
-            case '<': if (*cursor == '=') { ++cursor; token.kind = T_LE; } else token.kind = T_LT; break;
+            case '<':
+                if (*cursor == '^') { ++cursor; token.kind = T_ERROR_OUTPUT; }
+                else if (*cursor == '=') { ++cursor; token.kind = T_LE; }
+                else token.kind = T_LT;
+                break;
             case '>':
                 if (*cursor == '^') { ++cursor; token.kind = T_OUTPUT; }
                 else if (*cursor == '=') { ++cursor; token.kind = T_GE; }
@@ -369,6 +373,10 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         } else if (match_keyword(p, "writescrn")) {
             stmt = new_stmt(S_OUTPUT, start.line);
             expect(p, T_OUTPUT, "expected >^ after writescrn");
+            stmt->as.expression = parse_expression(p, 1);
+        } else if (match_keyword(p, "errstate")) {
+            stmt = new_stmt(S_ERROR_OUTPUT, start.line);
+            expect(p, T_ERROR_OUTPUT, "expected <^ after errstate");
             stmt->as.expression = parse_expression(p, 1);
         } else if (match_keyword(p, "memdesig")) {
             Token name = *peek(p);
@@ -573,6 +581,7 @@ static Result execute(Stmt *stmt, Env *env) {
         }
         case S_EXPR: (void)evaluate(stmt->as.expression, env); break;
         case S_OUTPUT: write_value(stdout, evaluate(stmt->as.expression, env)); fputc('\n', stdout); break;
+        case S_ERROR_OUTPUT: write_value(stderr, evaluate(stmt->as.expression, env)); fputc('\n', stderr); break;
         case S_MEMORY: {
             Value size_value = evaluate(stmt->as.memory.size, env); double size;
             if (!number_value(size_value, &size, stmt->line)) break;
