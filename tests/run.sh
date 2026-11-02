@@ -24,4 +24,12 @@ if [[ "$normal_output" != "normal message" || "$error_output" != "diagnostic mes
     exit 1
 fi
 
+parameter_errors="$(./y_ tests/input_args.y 2>"$error_output_file")"
+expected_parameter_errors="$(printf 'Input has more characters!\nOutput has more characters!\nAn error has occured in <input_lib>')"
+actual_parameter_errors="$(<"$error_output_file")"
+if [[ -n "$parameter_errors" || "$actual_parameter_errors" != "$expected_parameter_errors" ]]; then
+    printf 'script parameters or errstate output did not behave as expected\nstdout: %s\nstderr: %s\n' "$parameter_errors" "$actual_parameter_errors" >&2
+    exit 1
+fi
+
 printf 'Y_ smoke and error-path tests passed\n'

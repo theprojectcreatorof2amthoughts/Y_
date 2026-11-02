@@ -1,5 +1,5 @@
-!#libinc "stdlib/math.y"
-!#libinc "stdlib/strings.y"
+!#inclib %math.yl%
+!#inclib %strings.yl%
 
 ## Verify Y_ truth words plus loop escape.
 stash limited = math_clamp(18, 0, 10)

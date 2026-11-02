@@ -8,6 +8,7 @@ Y_ is currently a compact tree-walk interpreter organized around explicit subsys
 - `src/y_.c` owns source tokenization, recursive-descent parsing, AST execution, function environments, built-in dispatch, and the REPL.
 - `src/memory.c` owns zero-initialized buffers and checked byte reads/writes. The interpreter enforces the language-level allocation limit before calling it.
 - `src/file_io.c` owns whole-file loading shared by script execution and `!#libinc`.
+- `tools/embed_yl.c` converts every discovered `.yl` file into generated C source; the generated library strings are linked into `y_` and resolved by `!#inclib %path.yl%` imports.
 - Public declarations are in `src/y_.h`, `src/memory.h`, and `src/file_io.h`.
 
 ## Execution path
@@ -16,7 +17,7 @@ Y_ is currently a compact tree-walk interpreter organized around explicit subsys
 2. The lexer converts source characters into tokens with line metadata.
 3. The parser builds a linked statement tree and expression tree.
 4. The evaluator resolves values in chained environments and executes statements directly.
-5. Imports reuse the caller's environment; memory built-ins delegate to the checked memory module.
+5. `!#inclib %path.yl%` imports execute an embedded library in the caller's environment; `!#libinc` loads external source files; memory built-ins delegate to the checked memory module.
 
 The interpreter currently favors a small dependency-free implementation over bytecode compilation. Its next natural boundaries are separate lexer/parser/runtime translation units and a public embedding API.
 

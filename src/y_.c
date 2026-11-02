@@ -7,12 +7,14 @@
 #include <string.h>
 #include "file_io.h"
 #include "memory.h"
+#include "embedded_libraries.h"
 #include "y_.h"
 
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
-    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_ERROR_OUTPUT, T_LIBINC
+    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_ERROR_OUTPUT,
+    T_LIBINC, T_EMBEDDED_LIBRARY
 } TokenKind;
 
 typedef struct { TokenKind kind; char *text; double number; int line; } Token;
@@ -45,6 +47,7 @@ struct Expr {
 };
 
 typedef enum { S_LOCAL, S_ASSIGN, S_EXPR, S_OUTPUT, S_ERROR_OUTPUT, S_MEMORY, S_INCLUDE,
+               S_EMBEDDED_INCLUDE,
                S_FUNCTION, S_RETURN, S_IF, S_WHILE, S_BREAK } StmtKind;
 struct Stmt {
     StmtKind kind;
@@ -54,6 +57,7 @@ struct Stmt {
         struct { char *name; Expr *value; } variable;
         Expr *expression;
         struct { char *name; Expr *size; } memory;
+        char *embedded_library;
         struct { char *name; char **params; size_t count; Stmt *body; } function;
         struct { Expr *value; } returned;
         struct { Expr *condition; Stmt *yes, *no; } conditional;
@@ -141,10 +145,30 @@ static void tokenize(Parser *parser, const char *source) {
             cursor += 2;
             const char *start = cursor;
             while (is_name_char(*cursor)) ++cursor;
-            if ((size_t)(cursor - start) != 6 || strncmp(start, "libinc", 6) != 0) {
-                report_error(line, "unknown directive; expected !#libinc"); break;
+            size_t directive_length = (size_t)(cursor - start);
+            if (directive_length == 6 && strncmp(start, "libinc", 6) == 0) {
+                token.kind = T_LIBINC;
+                token.text = copy_range(start, directive_length);
+                add_token(parser, token);
+                continue;
             }
-            token.kind = T_LIBINC; token.text = copy_range(start, 6); add_token(parser, token);
+            if (directive_length != 6 || strncmp(start, "inclib", 6) != 0) {
+                report_error(line, "unknown directive; expected !#libinc or !#inclib");
+                break;
+            }
+            while (*cursor == ' ' || *cursor == '\t') ++cursor;
+            if (*cursor != '%') { report_error(line, "expected '%' before embedded .yl library path"); break; }
+            ++cursor;
+            const char *path_start = cursor;
+            while (*cursor && *cursor != '%' && *cursor != '\n') ++cursor;
+            if (*cursor != '%' || cursor == path_start) {
+                report_error(line, "expected a non-empty .yl path between '%' markers");
+                break;
+            }
+            token.kind = T_EMBEDDED_LIBRARY;
+            token.text = copy_range(path_start, (size_t)(cursor - path_start));
+            ++cursor;
+            add_token(parser, token);
             continue;
         }
         if (is_name_start(*cursor)) {
@@ -388,6 +412,9 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         } else if (match(p, T_LIBINC)) {
             stmt = new_stmt(S_INCLUDE, start.line);
             stmt->as.expression = parse_expression(p, 1);
+        } else if (match(p, T_EMBEDDED_LIBRARY)) {
+            stmt = new_stmt(S_EMBEDDED_INCLUDE, start.line);
+            stmt->as.embedded_library = previous(p)->text;
         } else if (peek(p)->kind == T_CUSTOM || peek(p)->kind == T_NAME) {
             Token name = *peek(p); ++p->at;
             if (match(p, T_ASSIGN)) {
@@ -599,6 +626,28 @@ static Result execute(Stmt *stmt, Env *env) {
             char *source = read_entire_file(path.as.string, NULL);
             if (source) { run_source(source, path.as.string, env); free(source); }
             else failed = true;
+            break;
+        }
+        case S_EMBEDDED_INCLUDE: {
+            const char *path = stmt->as.embedded_library;
+            const char *filename = strrchr(path, '/');
+            filename = filename ? filename + 1 : path;
+            size_t filename_length = strlen(filename);
+            if (filename_length <= 3 || strcmp(filename + filename_length - 3, ".yl") != 0) {
+                report_error(stmt->line, "embedded imports must name a .yl file");
+                break;
+            }
+            char *library_name = copy_range(filename, filename_length - 3);
+            const char *source = y_embedded_library(library_name);
+            if (!source) {
+                char message[256];
+                snprintf(message, sizeof(message), "unknown embedded library '%%%s%%'", path);
+                report_error(stmt->line, message);
+                free(library_name);
+                break;
+            }
+            run_source(source, library_name, env);
+            free(library_name);
             break;
         }
         case S_FUNCTION: {

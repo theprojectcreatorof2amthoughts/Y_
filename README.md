@@ -37,7 +37,7 @@ writescrn >^ memread(!$scratch, 0)
 
 `writescrn >^ expression` prints a value to standard output; `errstate <^ expression` prints a diagnostic to standard error. `!$name` reads a custom variable and `!$name = expression` assigns it. Use `!${name-with-symbols}` for custom variable names containing punctuation or spaces. `memdesig !$name, size` allocates a zeroed byte buffer; `memread(buffer, index)` and `memwrite(buffer, index, byte)` access it. Indices are zero-based.
 
-`!#libinc "path.y"` runs another source file in the current variable environment. Paths are relative to the process working directory. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
+`!#inclib %math.yl%`, `!#inclib %strings.yl%`, and `!#inclib %stdint/intstate.yl%` import libraries embedded in the executable from `.yl` files. `!#libinc "path.y"` remains available for loading an external source file from the process working directory. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
 
 ## Project layout
 
@@ -46,7 +46,6 @@ writescrn >^ memread(!$scratch, 0)
 - `src/memory.c` / `src/memory.h` implement checked byte-buffer operations.
 - `src/file_io.c` / `src/file_io.h` provide source-file loading for scripts and imports.
 - `stdlib/` contains reusable Y_ source libraries.
-- `staio/` contains input and output source libraries for tidiness.
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
 

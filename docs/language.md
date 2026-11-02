@@ -56,10 +56,10 @@ errstate <^ "a diagnostic message"
 memdesig !$bytes, 32
 memwrite(!$bytes, 0, 72)
 stash first_byte = memread(!$bytes, 0)
-!#libinc "stdlib/math.y"
+!#inclib %math.yl%
 ```
 
-`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. Use it for diagnostics; runtime errors still use the interpreter's error path. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#libinc` executes a source file in the current environment; paths are relative to the process working directory.
+`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. Use it for diagnostics; runtime errors still use the interpreter's error path. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.y"` remains available for external `.y` source files.
 
 ## Interactive mode
 
