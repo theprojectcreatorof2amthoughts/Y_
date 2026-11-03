@@ -10,6 +10,8 @@
 #include "embedded_libraries.h"
 #include "y_.h"
 
+#define Y_VERSION "0.1.0"
+
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
@@ -695,7 +697,11 @@ static bool run_source(const char *source, const char *path, Env *env) {
 
 int y_program_main(int argc, char **argv) {
     Env *globals = new_env(NULL);
-    if (argc > 2) { fprintf(stderr, "usage: %s [script.yc]\n", argv[0]); return 2; }
+    if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+        printf("Y_ %s\n", Y_VERSION);
+        return 0;
+    }
+    if (argc > 2) { fprintf(stderr, "usage: %s [--version | script.yc]\n", argv[0]); return 2; }
     if (argc == 2) {
         char *source = read_entire_file(argv[1], NULL);
         if (!source) return 1;
