@@ -46,6 +46,7 @@ writescrn >^ memread(!$scratch, 0)
 - `src/memory.c` / `src/memory.h` implement checked byte-buffer operations.
 - `src/file_io.c` / `src/file_io.h` provide source-file loading for scripts and imports.
 - `stdlib/` contains reusable Y_ source libraries.
+- `stdint/` contains integer libraries that define easier expressions
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
 
