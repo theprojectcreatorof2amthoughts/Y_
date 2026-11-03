@@ -695,7 +695,7 @@ static bool run_source(const char *source, const char *path, Env *env) {
 
 int y_program_main(int argc, char **argv) {
     Env *globals = new_env(NULL);
-    if (argc > 2) { fprintf(stderr, "usage: %s [script.y]\n", argv[0]); return 2; }
+    if (argc > 2) { fprintf(stderr, "usage: %s [script.yc]\n", argv[0]); return 2; }
     if (argc == 2) {
         char *source = read_entire_file(argv[1], NULL);
         if (!source) return 1;

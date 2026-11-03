@@ -6,8 +6,8 @@ Y_ is a modular scripting language implemented in portable C11. It uses its own 
 
 ```sh
 make
-./y_ examples/hello.y
-./y_ examples/project.y
+./y_ examples/hello.yc
+./y_ examples/project.yc
 make test
 ```
 
@@ -37,7 +37,7 @@ writescrn >^ memread(!$scratch, 0)
 
 `writescrn >^ expression` prints a value to standard output; `errstate <^ expression` prints a diagnostic to standard error. `!$name` reads a custom variable and `!$name = expression` assigns it. Use `!${name-with-symbols}` for custom variable names containing punctuation or spaces. `memdesig !$name, size` allocates a zeroed byte buffer; `memread(buffer, index)` and `memwrite(buffer, index, byte)` access it. Indices are zero-based.
 
-`!#inclib %math.yl%`, `!#inclib %strings.yl%`, and `!#inclib %stdint/intstate.yl%` import libraries embedded in the executable from `.yl` files. `!#libinc "path.y"` remains available for loading an external source file from the process working directory. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
+`!#inclib %math.yl%`, `!#inclib %strings.yl%`, and `!#inclib %stdint/intstate.yl%` import libraries embedded in the executable from `.yl` files. `!#libinc "path.yc"` remains available for loading an external source file from the process working directory. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
 
 ## Project layout
 

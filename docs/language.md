@@ -1,6 +1,6 @@
 # Y_ Language Guide
 
-Y_ is an interpreted language with its own keywords. Source files use `.y`; statements can be separated by newlines or semicolons. Comments begin with `##` and continue to the end of the line.
+Y_ is an interpreted language with its own keywords. Source files use `.yc`; statements can be separated by newlines or semicolons. Comments begin with `##` and continue to the end of the line.
 
 ## Values and variables
 
@@ -59,10 +59,10 @@ stash first_byte = memread(!$bytes, 0)
 !#inclib %math.yl%
 ```
 
-`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. Use it for diagnostics; runtime errors still use the interpreter's error path. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.y"` remains available for external `.y` source files.
+`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. Use it for diagnostics; runtime errors still use the interpreter's error path. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files.
 
 ## Interactive mode
 
-Run `./y_` with no arguments to evaluate one-line snippets in a persistent environment. Run `./y_ path/to/script.y` to execute a source file.
+Run `./y_` with no arguments to evaluate one-line snippets in a persistent environment. Run `./y_ path/to/script.yc` to execute a source file.
 
 Y_ does not accept Lua's `local`, `function`, `return`, `if`, `while`, or boolean keyword spellings. Tables, coroutines, modules, and bytecode compilation are not currently supported.
