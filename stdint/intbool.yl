@@ -1,0 +1,18 @@
+define yesint
+ when bool == yes doit
+        !#inclib %strings.yl%
+
+        stash <12truemsg> == "12 is true"
+        string_repeat(<12truemsg>, 3)
+    done
+done
+
+define noint
+    when bool == no doit
+        !#inclib %strings.yl%
+        
+        stash <12falsemsg> == "12 is false"
+        string_repeat(<12falsemsg>, 3)
+    done
+done
+
