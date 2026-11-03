@@ -39,6 +39,17 @@ writescrn >^ memread(!$scratch, 0)
 
 `!#inclib %math.yl%`, `!#inclib %strings.yl%`, and `!#inclib %stdint/intstate.yl%` import libraries embedded in the executable from `.yl` files. `!#libinc "path.yc"` remains available for loading an external source file from the process working directory. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
 
+## HTML with Y_
+
+`stdhtml/` contains Y_ helpers for HTML elements, attributes, and complete document wrappers. Browse [the stdhtml catalog](stdhtml/index.html), then generate the demo page with:
+
+```sh
+make
+./y_ stdhtml/demo.yc > page.html
+```
+
+The helpers insert supplied content as raw markup; escape untrusted text before using it in a page.
+
 ## Project layout
 
 - `src/main.c` provides the executable entry point.
@@ -47,6 +58,7 @@ writescrn >^ memread(!$scratch, 0)
 - `src/file_io.c` / `src/file_io.h` provide source-file loading for scripts and imports.
 - `stdlib/` contains reusable Y_ source libraries.
 - `stdint/` contains integer libraries that define easier expressions
+- `stdhtml/` contains HTML-generation libraries, a demo script, and their HTML reference page.
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
 

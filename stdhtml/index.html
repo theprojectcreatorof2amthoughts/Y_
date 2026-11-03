@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reference for building HTML markup with Y_ embedded libraries.">
+  <title>stdhtml | Y_ library reference</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172923;
+      --muted: #52635c;
+      --paper: #f3f6f1;
+      --surface: #fff;
+      --line: #d5dfd8;
+      --green: #17684d;
+      --green-dark: #104c39;
+      --lime: #d8f16a;
+      --coral: #c54b38;
+      --code: #172923;
+      --code-ink: #f0f7f1;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    a { color: var(--green-dark); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 64px; padding: 0 5vw; color: white; background: var(--green-dark); }
+    .brand { display: flex; align-items: center; gap: .75rem; font-weight: 800; }
+    .brand-mark { display: grid; place-items: center; width: 34px; aspect-ratio: 1; border-radius: 8px; color: var(--green-dark); background: var(--lime); font-family: ui-monospace, monospace; }
+    .topbar a { color: #e4f3e9; text-underline-offset: 3px; }
+    .layout { display: grid; grid-template-columns: 220px minmax(0, 900px); gap: 4vw; max-width: 1440px; margin: 0 auto; padding: 42px 5vw 80px; }
+    .rail { position: sticky; top: 24px; align-self: start; }
+    .rail-label, .eyebrow { color: var(--green); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+    .rail nav { display: grid; gap: .3rem; margin-top: 1rem; }
+    .rail nav a { padding: .55rem .7rem; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; }
+    .rail nav a:hover, .rail nav a:focus-visible { border-color: var(--green); color: var(--green-dark); background: #e7eee8; }
+    main { min-width: 0; }
+    .intro { padding: 1rem 0 2.2rem; border-bottom: 1px solid var(--line); }
+    h1 { margin: .35rem 0 .6rem; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.4rem, 6vw, 4.5rem); font-weight: 500; line-height: 1; }
+    .intro p { max-width: 660px; margin: 0; color: var(--muted); font-size: 1.06rem; line-height: 1.65; }
+    .import-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .65rem .75rem .65rem 1rem; border: 1px solid #335747; border-radius: 8px; color: var(--code-ink); background: var(--code); }
+    code, pre, .signature { font-family: ui-monospace, "Cascadia Code", monospace; }
+    .import-row code { overflow-wrap: anywhere; }
+    button { min-height: 38px; padding: .45rem .8rem; border: 1px solid transparent; border-radius: 6px; color: #10251c; background: var(--lime); font: inherit; font-size: .85rem; font-weight: 800; cursor: pointer; }
+    button:hover { background: white; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #de6b52; outline-offset: 2px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.5rem 0 .75rem; }
+    .toolbar h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.8rem; font-weight: 500; }
+    .search { width: min(100%, 260px); min-height: 40px; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--surface); font: inherit; }
+    .module { display: grid; grid-template-columns: minmax(160px, .7fr) minmax(0, 1.3fr); gap: 2rem; padding: 1.6rem 0; border-top: 1px solid var(--line); }
+    .module h3 { margin: 0 0 .45rem; font-size: 1.05rem; }
+    .module .desc { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+    .module-body { min-width: 0; }
+    .signature { display: block; margin: .55rem 0; color: var(--green-dark); font-size: .83rem; overflow-wrap: anywhere; }
+    pre { overflow-x: auto; margin: .65rem 0 0; padding: .9rem 1rem; border-radius: 8px; color: var(--code-ink); background: var(--code); font-size: .84rem; line-height: 1.6; }
+    .notice { margin-top: 1rem; padding: .8rem 1rem; border-left: 4px solid var(--coral); color: #56342d; background: #fff0ec; line-height: 1.55; }
+    .empty { display: none; padding: 1.5rem 0; color: var(--muted); }
+    footer { padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; gap: 1.5rem; padding-top: 24px; }
+      .rail { position: static; }
+      .rail nav { display: flex; flex-wrap: wrap; }
+      .rail nav a { border-left: 0; border-bottom: 2px solid transparent; }
+      .module { grid-template-columns: 1fr; gap: .75rem; }
+    }
+    @media (max-width: 480px) {
+      .topbar { padding: 0 1rem; }
+      .layout { padding-right: 1rem; padding-left: 1rem; }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .search { width: 100%; }
+      .import-row { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">Y_</span><span>Y_ standard libraries</span></div>
+    <a href="../README.md">Project README</a>
+  </header>
+  <div class="layout">
+    <aside class="rail" aria-label="Library navigation">
+      <div class="rail-label">stdhtml</div>
+      <nav>
+        <a href="#start">Getting started</a>
+        <a href="#elements">Elements</a>
+        <a href="#attributes">Attributes</a>
+        <a href="#document">Documents</a>
+        <a href="#safety">Content safety</a>
+      </nav>
+    </aside>
+    <main>
+      <section class="intro" id="start">
+        <div class="eyebrow">Y_ library reference</div>
+        <h1>stdhtml</h1>
+        <p>Small Y_ helpers for assembling HTML strings. Import a module into a script, compose elements, then redirect Y_ output to an <code>.html</code> file.</p>
+        <div class="import-row">
+          <code>!#inclib %stdhtml/document.yl%</code>
+          <button type="button" data-copy="!#inclib %stdhtml/document.yl%">Copy import</button>
+        </div>
+      </section>
+      <div class="toolbar">
+        <h2>Library index</h2>
+        <input class="search" id="search" type="search" placeholder="Filter functions" aria-label="Filter functions">
+      </div>
+      <section class="module" id="elements" data-searchable="elements html tag heading paragraph div section main header footer strong emphasis code pre list item break rule">
+        <div>
+          <h3>elements.yl</h3>
+          <p class="desc">Common paired tags and a couple of void tags. Content is inserted as provided.</p>
+          <span class="signature">!#inclib %stdhtml/elements.yl%</span>
+        </div>
+        <div class="module-body">
+          <code class="signature">html_h1(content) · html_h2(content) · html_p(content)</code>
+          <code class="signature">html_div(content) · html_section(content) · html_main(content)</code>
+          <pre>stash heading = html_h1("Y_ page")
+stash copy = html_p("Built from Y_ strings.")
+writescrn &gt;^ heading + copy</pre>
+          <button type="button" data-copy="!#inclib %stdhtml/elements.yl%">Copy import</button>
+        </div>
+      </section>
+      <section class="module" id="attributes" data-searchable="attributes link anchor image button stylesheet script source url alt">
+        <div>
+          <h3>attributes.yl</h3>
+          <p class="desc">Helpers for a few tags that carry attributes.</p>
+          <span class="signature">!#inclib %stdhtml/attributes.yl%</span>
+        </div>
+        <div class="module-body">
+          <code class="signature">html_link(content, url)</code>
+          <code class="signature">html_image(source, alt_text) · html_button(content, type)</code>
+          <code class="signature">html_css_link(path) · html_script_link(path)</code>
+          <pre>stash home = html_link("Home", "/")
+writescrn &gt;^ home</pre>
+          <button type="button" data-copy="!#inclib %stdhtml/attributes.yl%">Copy import</button>
+        </div>
+      </section>
+      <section class="module" id="document" data-searchable="document page html_page html_page_start html_page_end doctype head body">
+        <div>
+          <h3>document.yl</h3>
+          <p class="desc">Page wrapper with a doctype, UTF-8 metadata, viewport metadata, title, and body tags. Imports elements.yl for page helpers.</p>
+          <span class="signature">!#inclib %stdhtml/document.yl%</span>
+        </div>
+        <div class="module-body">
+          <code class="signature">html_page(title, body)</code>
+          <code class="signature">html_page_start(title) · html_page_end</code>
+          <pre>stash body = html_main(html_h1("Hello"))
+writescrn &gt;^ html_page("My page", body)</pre>
+          <button type="button" data-copy="!#inclib %stdhtml/document.yl%">Copy import</button>
+        </div>
+      </section>
+      <section class="notice" id="safety">
+        Y_ currently has no HTML escaping helper. These functions insert strings as raw markup; only pass trusted content, or escape user-provided text before using it in a page.
+      </section>
+      <footer>
+        The libraries are embedded during the build. Generate a page with <code>./y_ stdhtml/demo.yc &gt; page.html</code>, then open <code>page.html</code> in a browser.
+      </footer>
+      <p class="empty" id="empty">No functions match that filter.</p>
+    </main>
+  </div>
+  <script>
+    const search = document.querySelector("#search");
+    const modules = [...document.querySelectorAll(".module")];
+    const empty = document.querySelector("#empty");
+
+    search.addEventListener("input", () => {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      for (const module of modules) {
+        const matches = module.dataset.searchable.includes(query);
+        module.hidden = !matches;
+        if (matches) visible += 1;
+      }
+      empty.style.display = visible ? "none" : "block";
+    });
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const field = document.createElement("textarea");
+        field.value = text;
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.append(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
+      }
+    }
+
+    for (const button of document.querySelectorAll("[data-copy]")) {
+      button.addEventListener("click", async () => {
+        await copyText(button.dataset.copy);
+        const original = button.textContent;
+        button.textContent = "Copied";
+        setTimeout(() => { button.textContent = original; }, 1200);
+      });
+    }
+  </script>
+</body>
+</html>
