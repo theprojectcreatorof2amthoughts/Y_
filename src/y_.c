@@ -481,11 +481,36 @@ static bool number_value(Value value, double *out, int line) {
     *out = value.as.number; return true;
 }
 
+static Value read_input_line(int line) {
+    size_t capacity = 64, length = 0;
+    char *buffer = malloc(capacity);
+    if (!buffer) { fputs("out of memory\n", stderr); exit(2); }
+    int character;
+    while ((character = getchar()) != EOF && character != '\n') {
+        if (length + 1 >= capacity) {
+            capacity *= 2;
+            char *grown = realloc(buffer, capacity);
+            if (!grown) { free(buffer); fputs("out of memory\n", stderr); exit(2); }
+            buffer = grown;
+        }
+        buffer[length++] = (char)character;
+    }
+    if (character == EOF && ferror(stdin)) {
+        free(buffer);
+        report_error(line, "failed to read input");
+        return nil_value();
+    }
+    if (character == EOF && length == 0) { free(buffer); return nil_value(); }
+    if (length > 0 && buffer[length - 1] == '\r') --length;
+    buffer[length] = '\0';
+    return (Value){ .kind = V_STRING, .as.string = buffer };
+}
+
 static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
@@ -501,7 +526,19 @@ static Value call_function(Expr *expr, Env *env) {
     }
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        if (strcmp(name, "memread") == 0 && expr->as.call.count == 2) {
+        if (strcmp(name, "input") == 0) {
+            if (expr->as.call.count > 1) report_error(expr->line, "input expects zero arguments or one prompt string");
+            else if (expr->as.call.count == 1 && args[0].kind != V_STRING) report_error(expr->line, "input prompt must be a string");
+            else {
+                if (expr->as.call.count == 1) {
+                    fputs(args[0].as.string, stdout);
+                    fflush(stdout);
+                }
+                Value result = read_input_line(expr->line);
+                free(args);
+                return result;
+            }
+        } else if (strcmp(name, "memread") == 0 && expr->as.call.count == 2) {
             double index;
             if (args[0].kind != V_MEMORY || !number_value(args[1], &index, expr->line)) report_error(expr->line, "memread expects (memory, index)");
             else if (index < 0 || index >= (double)args[0].as.memory->size || floor(index) != index) report_error(expr->line, "memory index out of bounds");
