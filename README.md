@@ -1,6 +1,6 @@
 # Y_
 
-Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary while also offering familiar aliases, richer operators, numeric and string conversion helpers, and expanded math built-ins.
+Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary and adds richer operators, numeric and string conversion helpers, and expanded math built-ins.
 
 ## Build and run
 
@@ -62,4 +62,4 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
 
-New vocabulary includes `let` / `var`, `fn` / `func`, `return`, `if` / `then` / `otherwise`, `while` / `do`, `break`, and `print`. New operators include `**` (power), `//` (floor division), `..` (string concatenation), plus `and`, `or`, and `not`. Built-ins include `type`, `length`, `tonumber`, `abs`, `sqrt`, `floor`, `ceil`, `round`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `log`, and `exp`. Every original keyword and operator remains available.\n\nStart with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
+New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, string helpers, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.\n\nStart with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
