@@ -58,6 +58,7 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `src/file_io.c` / `src/file_io.h` provide source-file loading for scripts and imports.
 - `stdlib/` contains reusable Y_ source libraries.
 - `stdint/` contains integer libraries that define easier expressions
+- `stdmodel/` contains model libraries for software or code that focuses on models.
 - `stdhtml/` contains HTML-generation libraries, a demo script, and their HTML reference page.
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
