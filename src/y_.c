@@ -415,10 +415,10 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
             stmt->as.loop.condition = parse_expression(p, 1);
             expect_any_keyword(p, "execute", "do");
             stmt->as.loop.body = parse_block(p, false);
-            expect_keyword(p, "done");
+            expect_any_keyword(p, "done", "end");
         } else if (match_any_keyword(p, "give", "return", NULL)) {
             stmt = new_stmt(S_RETURN, start.line);
-            if (peek(p)->kind != T_SEMI && !keyword(p, "done") && peek(p)->kind != T_EOF)
+            if (peek(p)->kind != T_SEMI && !keyword_any(p, "done", "end", NULL) && peek(p)->kind != T_EOF)
                 stmt->as.returned.value = parse_expression(p, 1);
         } else if (match_any_keyword(p, "escape", "break", NULL)) {
             stmt = new_stmt(S_BREAK, start.line);
@@ -539,7 +539,7 @@ static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
@@ -567,6 +567,62 @@ static Value call_function(Expr *expr, Env *env) {
                 free(args);
                 return result;
             }
+        } else if (strcmp(name, "type") == 0 && expr->as.call.count == 1) {
+            const char *type_name = "void";
+            switch (args[0].kind) {
+                case V_NIL: type_name = "void"; break;
+                case V_NUMBER: type_name = "number"; break;
+                case V_STRING: type_name = "string"; break;
+                case V_BOOL: type_name = "boolean"; break;
+                case V_FUNCTION: type_name = "function"; break;
+                case V_MEMORY: type_name = "memory"; break;
+            }
+            Value result = { .kind = V_STRING, .as.string = copy_range(type_name, strlen(type_name)) };
+            free(args); return result;
+        } else if (strcmp(name, "length") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "length expects a string");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = (double)strlen(args[0].as.string) };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "tonumber") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind == V_NUMBER) { Value result = args[0]; free(args); return result; }
+            if (args[0].kind != V_STRING) report_error(expr->line, "tonumber expects a string or number");
+            else {
+                char *end = NULL;
+                errno = 0;
+                double parsed = strtod(args[0].as.string, &end);
+                while (end && isspace((unsigned char)*end)) ++end;
+                if (errno == ERANGE || end == args[0].as.string || !end || *end) report_error(expr->line, "tonumber could not parse the string");
+                else { Value result = { .kind = V_NUMBER, .as.number = parsed }; free(args); return result; }
+            }
+        } else if ((strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 ||
+                    strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 ||
+                    strcmp(name, "round") == 0 || strcmp(name, "sin") == 0 ||
+                    strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 ||
+                    strcmp(name, "log") == 0 || strcmp(name, "exp") == 0) && expr->as.call.count == 1) {
+            double x;
+            if (!number_value(args[0], &x, expr->line)) { free(args); return nil_value(); }
+            double result_number = x;
+            if (strcmp(name, "abs") == 0) result_number = fabs(x);
+            else if (strcmp(name, "sqrt") == 0) result_number = sqrt(x);
+            else if (strcmp(name, "floor") == 0) result_number = floor(x);
+            else if (strcmp(name, "ceil") == 0) result_number = ceil(x);
+            else if (strcmp(name, "round") == 0) result_number = round(x);
+            else if (strcmp(name, "sin") == 0) result_number = sin(x);
+            else if (strcmp(name, "cos") == 0) result_number = cos(x);
+            else if (strcmp(name, "tan") == 0) result_number = tan(x);
+            else if (strcmp(name, "log") == 0) result_number = log(x);
+            else if (strcmp(name, "exp") == 0) result_number = exp(x);
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
+            double x, y;
+            if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "pow") == 0 ? pow(x, y) :
+                                   (strcmp(name, "min") == 0 ? fmin(x, y) : fmax(x, y));
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
         } else if (strcmp(name, "memread") == 0 && expr->as.call.count == 2) {
             double index;
             if (args[0].kind != V_MEMORY || !number_value(args[1], &index, expr->line)) report_error(expr->line, "memread expects (memory, index)");
