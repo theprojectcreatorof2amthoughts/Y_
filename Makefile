@@ -1,16 +1,13 @@
 CC ?= cc
 CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic
 
-.PHONY: all clean test libraries FORCE
+.PHONY: all clean libraries FORCE
 
 LIBRARY_FILES := $(shell find . -type f -name '*.yl' -not -path './.git/*' -not -path './build/*' | LC_ALL=C sort)
 EMBEDDER := build/embed_yl
 EMBEDDED_SOURCE := build/embedded_libraries.c
 
 all: y_
-
-test: y_
-	bash tests/run.sh
 
 libraries: $(EMBEDDED_SOURCE)
 
