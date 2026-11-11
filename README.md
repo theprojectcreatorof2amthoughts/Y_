@@ -8,7 +8,6 @@ Y_ is a modular scripting language implemented in portable C11. It keeps its ori
 make
 ./y_ examples/hello.yc
 ./y_ examples/project.yc
-make test
 ```
 
 Run `./y_` without a file to start the interactive prompt. No third-party libraries are required.
@@ -60,7 +59,7 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `stdint/` contains integer libraries that define easier expressions
 - `stdmodel/` contains model libraries for software or code that focuses on models.
 - `stdhtml/` contains HTML-generation libraries, a demo script, and their HTML reference page.
-- `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
+- `examples/` contains complete scripts.
 - `docs/` describes the syntax and internal architecture.
 
 New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, string helpers, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
