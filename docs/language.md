@@ -65,6 +65,9 @@ The original vocabulary is preserved. These aliases are also accepted:
 - `length(text)` returns the number of bytes in a string.
 - `tonumber(value)` converts a numeric string to a number and reports invalid input.
 - Math: `abs`, `sqrt`, `floor`, `ceil`, `round`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `log`, and `exp`. Trigonometric functions use radians.
+- Predicates: `isnumber`, `isstring`, `isboolean`, and `isvoid` return booleans.
+- Strings: `upper`, `lower`, and `contains` (substring search).
+- Numeric helpers: `sign`, `clamp(value, low, high)`, and `lerp(from, to, amount)` (unclamped interpolation).
 
 `name define = yes` checks whether a variable has been defined, even if its value is `void`; use `no` to check that it has not been defined. This operator does not evaluate the variable's value:
 
