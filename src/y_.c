@@ -543,7 +543,7 @@ static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
@@ -571,6 +571,45 @@ static Value call_function(Expr *expr, Env *env) {
                 free(args);
                 return result;
             }
+        } else if ((strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 ||
+                    strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0) && expr->as.call.count == 1) {
+            bool matches = strcmp(name, "isnumber") == 0 ? args[0].kind == V_NUMBER :
+                           strcmp(name, "isstring") == 0 ? args[0].kind == V_STRING :
+                           strcmp(name, "isboolean") == 0 ? args[0].kind == V_BOOL : args[0].kind == V_NIL;
+            Value result = { .kind = V_BOOL, .as.boolean = matches };
+            free(args); return result;
+        } else if ((strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0) && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "upper/lower expects a string");
+            else {
+                size_t n = strlen(args[0].as.string);
+                char *converted = copy_range(args[0].as.string, n);
+                for (size_t i = 0; i < n; ++i)
+                    converted[i] = (char)(strcmp(name, "upper") == 0 ?
+                        toupper((unsigned char)converted[i]) : tolower((unsigned char)converted[i]));
+                Value result = { .kind = V_STRING, .as.string = converted };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "contains") == 0 && expr->as.call.count == 2) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "contains expects two strings");
+            else {
+                Value result = { .kind = V_BOOL, .as.boolean = strstr(args[0].as.string, args[1].as.string) != NULL };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "clamp") == 0 && expr->as.call.count == 3) {
+            double value, low, high;
+            if (!number_value(args[0], &value, expr->line) || !number_value(args[1], &low, expr->line) ||
+                !number_value(args[2], &high, expr->line)) { free(args); return nil_value(); }
+            if (low > high) report_error(expr->line, "clamp lower bound exceeds upper bound");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = fmin(fmax(value, low), high) };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "lerp") == 0 && expr->as.call.count == 3) {
+            double from, to, amount;
+            if (!number_value(args[0], &from, expr->line) || !number_value(args[1], &to, expr->line) ||
+                !number_value(args[2], &amount, expr->line)) { free(args); return nil_value(); }
+            Value result = { .kind = V_NUMBER, .as.number = from + (to - from) * amount };
+            free(args); return result;
         } else if (strcmp(name, "type") == 0 && expr->as.call.count == 1) {
             const char *type_name = "void";
             switch (args[0].kind) {
@@ -604,7 +643,7 @@ static Value call_function(Expr *expr, Env *env) {
                     strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 ||
                     strcmp(name, "round") == 0 || strcmp(name, "sin") == 0 ||
                     strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 ||
-                    strcmp(name, "log") == 0 || strcmp(name, "exp") == 0) && expr->as.call.count == 1) {
+                    strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0) && expr->as.call.count == 1) {
             double x;
             if (!number_value(args[0], &x, expr->line)) { free(args); return nil_value(); }
             double result_number = x;
@@ -618,6 +657,7 @@ static Value call_function(Expr *expr, Env *env) {
             else if (strcmp(name, "tan") == 0) result_number = tan(x);
             else if (strcmp(name, "log") == 0) result_number = log(x);
             else if (strcmp(name, "exp") == 0) result_number = exp(x);
+            else if (strcmp(name, "sign") == 0) result_number = (x > 0) - (x < 0);
             if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
             else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
         } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
