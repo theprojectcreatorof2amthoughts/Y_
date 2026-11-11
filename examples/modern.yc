@@ -25,3 +25,12 @@ end
 print "Floor division: " .. tostring(17 // 5)
 print "Square root: " .. tostring(sqrt(81))
 print "String length: " .. tostring(length("Y_ language"))
+print "Uppercase: " .. upper("y_language")
+print "Contains: " .. tostring(contains("modeling library", "library"))
+print "Clamp: " .. tostring(clamp(12, 0, 10))
+print "Lerp: " .. tostring(lerp(0, 10, 0.25))
+print "Is number: " .. tostring(isnumber(radius))
+
+if radius > 0 and not isvoid(radius) then
+    print "Boolean aliases work"
+end
