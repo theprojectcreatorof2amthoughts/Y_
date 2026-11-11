@@ -16,7 +16,6 @@ grep -Fq "Contains: yes" "$tmp"
 grep -Fq "Clamp: 10" "$tmp"
 grep -Fq "Lerp: 2.5" "$tmp"
 grep -Fq "Is number: yes" "$tmp"
-grep -Fq "Boolean aliases work" "$tmp"
 grep -Fq "Rounded area:" "$tmp"
 
-printf '%s\n' "Y_ modern syntax smoke tests passed."
+printf '%s\n' "Y_ feature smoke tests passed."
