@@ -1,0 +1,68 @@
+## 3D vector helpers. Components are passed as separate numbers.
+
+define model_vec3_dot(ax, ay, az, bx, by, bz)
+    give ax * bx + ay * by + az * bz
+done
+
+define model_vec3_add_x(ax, bx)
+    give ax + bx
+done
+
+define model_vec3_add_y(ay, by)
+    give ay + by
+done
+
+define model_vec3_add_z(az, bz)
+    give az + bz
+done
+
+define model_vec3_sub_x(ax, bx)
+    give ax - bx
+done
+
+define model_vec3_sub_y(ay, by)
+    give ay - by
+done
+
+define model_vec3_sub_z(az, bz)
+    give az - bz
+done
+
+define model_vec3_scale_x(x, amount)
+    give x * amount
+done
+
+define model_vec3_scale_y(y, amount)
+    give y * amount
+done
+
+define model_vec3_scale_z(z, amount)
+    give z * amount
+done
+
+define model_vec3_length_squared(x, y, z)
+    give x * x + y * y + z * z
+done
+
+define model_vec3_distance_squared(ax, ay, az, bx, by, bz)
+    stash dx = bx - ax
+    stash dy = by - ay
+    stash dz = bz - az
+    give dx * dx + dy * dy + dz * dz
+done
+
+define model_vec3_cross_x(ax, ay, az, bx, by, bz)
+    give ay * bz - az * by
+done
+
+define model_vec3_cross_y(ax, ay, az, bx, by, bz)
+    give az * bx - ax * bz
+done
+
+define model_vec3_cross_z(ax, ay, az, bx, by, bz)
+    give ax * by - ay * bx
+done
+
+define model_vec3_lerp(start, finish, amount)
+    give start + (finish - start) * amount
+done
