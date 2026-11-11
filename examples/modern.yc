@@ -1,0 +1,27 @@
+## Modern syntax aliases and new operators; original Y_ syntax still works too.
+
+let radius = 5
+let area = 3.141592653589793 * radius ** 2
+print "Circle area: " .. tostring(area)
+print "Radius type: " .. type(radius)
+print "Rounded area: " .. tostring(round(area))
+
+fn classify(score)
+    if score >= 90 then
+        return "excellent"
+    otherwise
+        return "keep practicing"
+    end
+end
+
+print classify(95)
+
+let counter = 3
+while counter > 0 do
+    print "count = " .. tostring(counter)
+    counter = counter - 1
+end
+
+print "Floor division: " .. tostring(17 // 5)
+print "Square root: " .. tostring(sqrt(81))
+print "String length: " .. tostring(length("Y_ language"))
