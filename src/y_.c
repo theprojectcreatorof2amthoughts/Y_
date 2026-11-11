@@ -248,6 +248,19 @@ static Token *previous(Parser *p) { return &p->items[p->at - 1]; }
 static bool keyword(Parser *p, const char *name) { return peek(p)->kind == T_NAME && strcmp(peek(p)->text, name) == 0; }
 static bool match(Parser *p, TokenKind kind) { if (peek(p)->kind != kind) return false; ++p->at; return true; }
 static bool match_keyword(Parser *p, const char *name) { if (!keyword(p, name)) return false; ++p->at; return true; }
+static bool keyword_any(Parser *p, const char *a, const char *b, const char *c) {
+    return keyword(p, a) || (b && keyword(p, b)) || (c && keyword(p, c));
+}
+static bool match_any_keyword(Parser *p, const char *a, const char *b, const char *c) {
+    if (!keyword_any(p, a, b, c)) return false;
+    ++p->at;
+    return true;
+}
+static bool expect_any_keyword(Parser *p, const char *a, const char *b) {
+    if (match_any_keyword(p, a, b, NULL)) return true;
+    report_error(peek(p)->line, "unexpected keyword or missing block delimiter");
+    return false;
+}
 
 static bool expect(Parser *p, TokenKind kind, const char *message) {
     if (match(p, kind)) return true;
@@ -295,7 +308,7 @@ static Expr *parse_primary(Parser *p) {
 }
 
 static Expr *parse_prefix(Parser *p) {
-    if (match(p, T_MINUS) || match_keyword(p, "invert")) {
+    if (match(p, T_MINUS) || match_any_keyword(p, "invert", "not", NULL)) {
         Token *op = previous(p);
         Expr *e = new_expr(E_UNARY, op->line);
         e->as.unary.op = op->kind == T_MINUS ? "-" : "invert";
@@ -326,8 +339,10 @@ static int precedence(Parser *p, const char **op) {
         *op = "define=";
         return 3;
     }
-    if (kind == T_NAME && (strcmp(peek(p)->text, "either") == 0 || strcmp(peek(p)->text, "both") == 0)) {
-        *op = peek(p)->text; return strcmp(*op, "either") == 0 ? 1 : 2;
+    if (kind == T_NAME && (strcmp(peek(p)->text, "either") == 0 || strcmp(peek(p)->text, "or") == 0 ||
+                           strcmp(peek(p)->text, "both") == 0 || strcmp(peek(p)->text, "and") == 0)) {
+        *op = (strcmp(peek(p)->text, "either") == 0 || strcmp(peek(p)->text, "or") == 0) ? "either" : "both";
+        return strcmp(*op, "either") == 0 ? 1 : 2;
     }
     switch (kind) {
         case T_EQ: *op = "=="; return 3; case T_NE: *op = "~="; return 3;
@@ -359,12 +374,12 @@ static Expr *parse_expression(Parser *p, int minimum) {
 
 static Stmt *parse_block(Parser *p, bool stop_at_else) {
     Stmt *head = NULL, **tail = &head;
-    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "else")) && !failed) {
+    while (peek(p)->kind != T_EOF && !keyword_any(p, "done", "end", NULL) && !(stop_at_else && keyword_any(p, "else", "otherwise", NULL)) && !failed) {
         if (match(p, T_SEMI)) continue;
         size_t before = p->at;
         Stmt *stmt = NULL;
         Token start = *peek(p);
-        if (match_keyword(p, "stash")) {
+        if (match_any_keyword(p, "stash", "let", "var")) {
             if (!match(p, T_NAME) && !match(p, T_CUSTOM)) {
                 report_error(peek(p)->line, "expected a variable name after stash");
                 break;
@@ -372,7 +387,7 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
             Token name = *previous(p);
             stmt = new_stmt(S_LOCAL, start.line); stmt->as.variable.name = name.text;
             if (match(p, T_ASSIGN)) stmt->as.variable.value = parse_expression(p, 1);
-        } else if (match_keyword(p, "define")) {
+        } else if (match_any_keyword(p, "define", "fn", "func")) {
             Token name = *peek(p);
             if (!expect(p, T_NAME, "expected a procedure name")) break;
             stmt = new_stmt(S_FUNCTION, start.line); stmt->as.function.name = name.text;
@@ -387,29 +402,32 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
                 expect(p, T_RPAREN, "expected ')' after parameters");
             }
             stmt->as.function.body = parse_block(p, false);
-            expect_keyword(p, "done");
-        } else if (match_keyword(p, "when")) {
+            expect_any_keyword(p, "done", "end");
+        } else if (match_any_keyword(p, "when", "if", NULL)) {
             stmt = new_stmt(S_IF, start.line);
             stmt->as.conditional.condition = parse_expression(p, 1);
-            expect_keyword(p, "doit");
+            expect_any_keyword(p, "doit", "then");
             stmt->as.conditional.yes = parse_block(p, true);
-            if (match_keyword(p, "else")) stmt->as.conditional.no = parse_block(p, false);
-            expect_keyword(p, "done");
-        } else if (match_keyword(p, "repeatwhile")) {
+            if (match_any_keyword(p, "else", "otherwise", NULL)) stmt->as.conditional.no = parse_block(p, false);
+            expect_any_keyword(p, "done", "end");
+        } else if (match_any_keyword(p, "repeatwhile", "while", NULL)) {
             stmt = new_stmt(S_WHILE, start.line);
             stmt->as.loop.condition = parse_expression(p, 1);
-            expect_keyword(p, "execute");
+            expect_any_keyword(p, "execute", "do");
             stmt->as.loop.body = parse_block(p, false);
             expect_keyword(p, "done");
-        } else if (match_keyword(p, "give")) {
+        } else if (match_any_keyword(p, "give", "return", NULL)) {
             stmt = new_stmt(S_RETURN, start.line);
             if (peek(p)->kind != T_SEMI && !keyword(p, "done") && peek(p)->kind != T_EOF)
                 stmt->as.returned.value = parse_expression(p, 1);
-        } else if (match_keyword(p, "escape")) {
+        } else if (match_any_keyword(p, "escape", "break", NULL)) {
             stmt = new_stmt(S_BREAK, start.line);
         } else if (match_keyword(p, "writescrn")) {
             stmt = new_stmt(S_OUTPUT, start.line);
             expect(p, T_OUTPUT, "expected >^ after writescrn");
+            stmt->as.expression = parse_expression(p, 1);
+        } else if (match_any_keyword(p, "print", "println", "emit")) {
+            stmt = new_stmt(S_OUTPUT, start.line);
             stmt->as.expression = parse_expression(p, 1);
         } else if (match_keyword(p, "errstate")) {
             stmt = new_stmt(S_ERROR_OUTPUT, start.line);
