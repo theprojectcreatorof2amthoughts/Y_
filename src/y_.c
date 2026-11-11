@@ -15,7 +15,7 @@
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
-    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_ERROR_OUTPUT,
+    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_POWER, T_IDIV, T_CONCAT, T_OUTPUT, T_ERROR_OUTPUT,
     T_LIBINC, T_EMBEDDED_LIBRARY
 } TokenKind;
 
@@ -221,7 +221,9 @@ static void tokenize(Parser *parser, const char *source) {
             case '(': token.kind = T_LPAREN; break; case ')': token.kind = T_RPAREN; break;
             case ',': token.kind = T_COMMA; break; case ';': token.kind = T_SEMI; break;
             case '+': token.kind = T_PLUS; break; case '-': token.kind = T_MINUS; break;
-            case '*': token.kind = T_STAR; break; case '/': token.kind = T_SLASH; break;
+            case '*': if (*cursor == '*') { ++cursor; token.kind = T_POWER; } else token.kind = T_STAR; break;
+            case '/': if (*cursor == '/') { ++cursor; token.kind = T_IDIV; } else token.kind = T_SLASH; break;
+            case '.': if (*cursor == '.') { ++cursor; token.kind = T_CONCAT; } else { report_error(line, "a single '.' is not an operator"); continue; } break;
             case '%': token.kind = T_PERCENT; break;
             case '=': if (*cursor == '=') { ++cursor; token.kind = T_EQ; } else token.kind = T_ASSIGN; break;
                 case '~': if (*cursor == '=') { ++cursor; token.kind = T_NE; } else { report_error(line, "expected ~="); continue; } break;
@@ -349,8 +351,10 @@ static int precedence(Parser *p, const char **op) {
         case T_LT: *op = "<"; return 3; case T_LE: *op = "<="; return 3;
         case T_GT: *op = ">"; return 3; case T_GE: *op = ">="; return 3;
         case T_PLUS: *op = "+"; return 4; case T_MINUS: *op = "-"; return 4;
+        case T_CONCAT: *op = ".."; return 4;
         case T_STAR: *op = "*"; return 5; case T_SLASH: *op = "/"; return 5;
-        case T_PERCENT: *op = "%"; return 5; default: return 0;
+        case T_IDIV: *op = "//"; return 5; case T_PERCENT: *op = "%"; return 5;
+        case T_POWER: *op = "**"; return 6; default: return 0;
     }
 }
 
@@ -362,7 +366,7 @@ static Expr *parse_expression(Parser *p, int minimum) {
         if (level < minimum || level == 0) break;
         if (strcmp(op, "define=") == 0) p->at += 2;
         else ++p->at;
-        Expr *right = parse_expression(p, level + 1);
+        Expr *right = parse_expression(p, strcmp(op, "**") == 0 ? level : level + 1);
         Expr *binary = new_expr(E_BINARY, left->line);
         binary->as.binary.op = (char *)op;
         binary->as.binary.left = left;
@@ -695,6 +699,14 @@ static Value evaluate(Expr *expr, Env *env) {
         else if (equal && left.kind == V_MEMORY) equal = left.as.memory == right.as.memory;
         return (Value){ .kind = V_BOOL, .as.boolean = strcmp(op, "==") == 0 ? equal : !equal };
     }
+    if (strcmp(op, "..") == 0 && left.kind == V_STRING && right.kind == V_STRING) {
+        size_t a_len = strlen(left.as.string), b_len = strlen(right.as.string);
+        char *joined = malloc(a_len + b_len + 1);
+        if (!joined) { fputs("out of memory\\n", stderr); exit(2); }
+        memcpy(joined, left.as.string, a_len);
+        memcpy(joined + a_len, right.as.string, b_len + 1);
+        return (Value){ .kind = V_STRING, .as.string = joined };
+    }
     if (strcmp(op, "+") == 0 && left.kind == V_STRING && right.kind == V_STRING) {
         size_t a = strlen(left.as.string), b = strlen(right.as.string);
         char *joined = malloc(a + b + 1); memcpy(joined, left.as.string, a); memcpy(joined + a, right.as.string, b + 1);
@@ -709,9 +721,18 @@ static Value evaluate(Expr *expr, Env *env) {
     if (strcmp(op, "+") == 0) return (Value){ .kind = V_NUMBER, .as.number = a + b };
     if (strcmp(op, "-") == 0) return (Value){ .kind = V_NUMBER, .as.number = a - b };
     if (strcmp(op, "*") == 0) return (Value){ .kind = V_NUMBER, .as.number = a * b };
+    if (strcmp(op, "**") == 0) {
+        double result = pow(a, b);
+        if (!isfinite(result)) { report_error(expr->line, "exponentiation produced a non-finite result"); return nil_value(); }
+        return (Value){ .kind = V_NUMBER, .as.number = result };
+    }
     if (strcmp(op, "/") == 0) {
         if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
         return (Value){ .kind = V_NUMBER, .as.number = a / b };
+    }
+    if (strcmp(op, "//") == 0) {
+        if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
+        return (Value){ .kind = V_NUMBER, .as.number = floor(a / b) };
     }
     if (strcmp(op, "%") == 0) {
         if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
