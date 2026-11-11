@@ -37,7 +37,34 @@ done
 
 ## Operators
 
-Arithmetic: `+`, `-`, `*`, `/`, `%`. Comparisons: `==`, `~=`, `<`, `<=`, `>`, `>=`. Boolean operators: `both`, `either`, `invert`. `+` also concatenates two strings. Only `void` and `no` are falsey.
+Arithmetic: `+`, `-`, `*`, `/`, `//` (floor division), `%`, and `**` (right-associative exponentiation). Comparisons: `==`, `~=`, `!=`, `<`, `<=`, `>`, `>=`. Boolean operators: `both`, `either`, `invert`, plus the aliases `and`, `or`, and `not`. String concatenation works with both `+` (two strings) and `..` (two strings). Only `void` and `no` are falsey.
+
+## Additional vocabulary
+
+The original vocabulary is preserved. These aliases are also accepted:
+
+| Original | Additional spelling |
+|---|---|
+| `stash` | `let`, `var` |
+| `define` | `fn`, `func` |
+| `give` | `return` |
+| `when` | `if` |
+| `doit` | `then` |
+| `else` | `otherwise` |
+| `done` | `end` |
+| `repeatwhile` | `while` |
+| `execute` | `do` |
+| `escape` | `break` |
+| `writescrn >^` | `print`, `println`, `emit` |
+
+`print` / `println` / `emit` each print one value followed by a newline. These aliases can be mixed with original vocabulary, but each opened block must be closed with one matching block-ending word (`done` or `end`).
+
+## Built-in functions
+
+- `type(value)` returns `"void"`, `"number"`, `"string"`, `"boolean"`, `"function"`, or `"memory"`.
+- `length(text)` returns the number of bytes in a string.
+- `tonumber(value)` converts a numeric string to a number and reports invalid input.
+- Math: `abs`, `sqrt`, `floor`, `ceil`, `round`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `log`, and `exp`. Trigonometric functions use radians.
 
 `name define = yes` checks whether a variable has been defined, even if its value is `void`; use `no` to check that it has not been defined. This operator does not evaluate the variable's value:
 
