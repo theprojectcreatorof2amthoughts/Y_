@@ -61,6 +61,17 @@ stash first_byte = memread(!$bytes, 0)
 
 `writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. Use it for diagnostics; runtime errors still use the interpreter's error path. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files.
 
+## Reading input
+
+Use `!#inptype("prompt")` as an expression to display a prompt, read one line from standard input, and return the entered text as a string. An empty prompt reads input without displaying anything:
+
+```lua
+stash username = !#inptype("Your name: ")
+writescrn >^ "Hello, " + username
+```
+
+The prompt must be a quoted string. End-of-file before any characters are read returns `void`. This syntax uses the same input behavior as the `input("prompt")` builtin.
+
 ## Interactive mode
 
 Run `./y_` with no arguments to evaluate one-line snippets in a persistent environment. Run `./y_ path/to/script.yc` to execute a source file.
