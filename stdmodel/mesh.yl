@@ -1,0 +1,49 @@
+## Mesh and polygon arithmetic helpers.
+## Vertex coordinates are passed explicitly because Y_ does not yet have arrays or structs.
+
+define model_triangle_signed_area_2d(ax, ay, bx, by, cx, cy)
+    give ((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) / 2
+done
+
+define model_triangle_cross_x(ax, ay, az, bx, by, bz, cx, cy, cz)
+    give (by - ay) * (cz - az) - (bz - az) * (cy - ay)
+done
+
+define model_triangle_cross_y(ax, ay, az, bx, by, bz, cx, cy, cz)
+    give (bz - az) * (cx - ax) - (bx - ax) * (cz - az)
+done
+
+define model_triangle_cross_z(ax, ay, az, bx, by, bz, cx, cy, cz)
+    give (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+done
+
+define model_triangle_cross_length_squared(ax, ay, az, bx, by, bz, cx, cy, cz)
+    stash nx = model_triangle_cross_x(ax, ay, az, bx, by, bz, cx, cy, cz)
+    stash ny = model_triangle_cross_y(ax, ay, az, bx, by, bz, cx, cy, cz)
+    stash nz = model_triangle_cross_z(ax, ay, az, bx, by, bz, cx, cy, cz)
+    give nx * nx + ny * ny + nz * nz
+done
+
+define model_mesh_euler_characteristic(vertex_count, edge_count, face_count)
+    give vertex_count - edge_count + face_count
+done
+
+define model_quad_triangle_count(quad_count)
+    give quad_count * 2
+done
+
+define model_triangle_mesh_index_count(triangle_count)
+    give triangle_count * 3
+done
+
+define model_ngon_triangle_count(vertex_count)
+    when vertex_count < 3 doit
+        give 0
+    else
+        give vertex_count - 2
+    done
+done
+
+define model_mesh_is_closed(euler_value, boundary_edge_count)
+    give boundary_edge_count == 0
+done
