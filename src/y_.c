@@ -10,12 +10,12 @@
 #include "embedded_libraries.h"
 #include "y_.h"
 
-#define Y_VERSION "0.1.0"
+#define Y_VERSION "0.2.0"
 
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
-    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_OUTPUT, T_ERROR_OUTPUT,
+    T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_POWER, T_IDIV, T_CONCAT, T_OUTPUT, T_ERROR_OUTPUT,
     T_LIBINC, T_EMBEDDED_LIBRARY
 } TokenKind;
 
@@ -221,11 +221,12 @@ static void tokenize(Parser *parser, const char *source) {
             case '(': token.kind = T_LPAREN; break; case ')': token.kind = T_RPAREN; break;
             case ',': token.kind = T_COMMA; break; case ';': token.kind = T_SEMI; break;
             case '+': token.kind = T_PLUS; break; case '-': token.kind = T_MINUS; break;
-            case '*': token.kind = T_STAR; break; case '/': token.kind = T_SLASH; break;
+            case '*': if (*cursor == '*') { ++cursor; token.kind = T_POWER; } else token.kind = T_STAR; break;
+            case '/': if (*cursor == '/') { ++cursor; token.kind = T_IDIV; } else token.kind = T_SLASH; break;
+            case '.': if (*cursor == '.') { ++cursor; token.kind = T_CONCAT; } else { report_error(line, "a single '.' is not an operator"); continue; } break;
             case '%': token.kind = T_PERCENT; break;
             case '=': if (*cursor == '=') { ++cursor; token.kind = T_EQ; } else token.kind = T_ASSIGN; break;
                 case '~': if (*cursor == '=') { ++cursor; token.kind = T_NE; } else { report_error(line, "expected ~="); continue; } break;
-            case '!': if (*cursor == '=') { ++cursor; token.kind = T_NE; } else { report_error(line, "expected !="); continue; } break;
             case '<':
                 if (*cursor == '^') { ++cursor; token.kind = T_ERROR_OUTPUT; }
                 else if (*cursor == '=') { ++cursor; token.kind = T_LE; }
@@ -334,8 +335,10 @@ static int precedence(Parser *p, const char **op) {
         case T_LT: *op = "<"; return 3; case T_LE: *op = "<="; return 3;
         case T_GT: *op = ">"; return 3; case T_GE: *op = ">="; return 3;
         case T_PLUS: *op = "+"; return 4; case T_MINUS: *op = "-"; return 4;
+        case T_CONCAT: *op = ".."; return 4;
         case T_STAR: *op = "*"; return 5; case T_SLASH: *op = "/"; return 5;
-        case T_PERCENT: *op = "%"; return 5; default: return 0;
+        case T_IDIV: *op = "//"; return 5; case T_PERCENT: *op = "%"; return 5;
+        case T_POWER: *op = "**"; return 6; default: return 0;
     }
 }
 
@@ -347,7 +350,7 @@ static Expr *parse_expression(Parser *p, int minimum) {
         if (level < minimum || level == 0) break;
         if (strcmp(op, "define=") == 0) p->at += 2;
         else ++p->at;
-        Expr *right = parse_expression(p, level + 1);
+        Expr *right = parse_expression(p, strcmp(op, "**") == 0 ? level : level + 1);
         Expr *binary = new_expr(E_BINARY, left->line);
         binary->as.binary.op = (char *)op;
         binary->as.binary.left = left;
@@ -521,7 +524,7 @@ static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
@@ -549,6 +552,102 @@ static Value call_function(Expr *expr, Env *env) {
                 free(args);
                 return result;
             }
+        } else if ((strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 ||
+                    strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0) && expr->as.call.count == 1) {
+            bool matches = strcmp(name, "isnumber") == 0 ? args[0].kind == V_NUMBER :
+                           strcmp(name, "isstring") == 0 ? args[0].kind == V_STRING :
+                           strcmp(name, "isboolean") == 0 ? args[0].kind == V_BOOL : args[0].kind == V_NIL;
+            Value result = { .kind = V_BOOL, .as.boolean = matches };
+            free(args); return result;
+        } else if ((strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0) && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "upper/lower expects a string");
+            else {
+                size_t n = strlen(args[0].as.string);
+                char *converted = copy_range(args[0].as.string, n);
+                for (size_t i = 0; i < n; ++i)
+                    converted[i] = (char)(strcmp(name, "upper") == 0 ?
+                        toupper((unsigned char)converted[i]) : tolower((unsigned char)converted[i]));
+                Value result = { .kind = V_STRING, .as.string = converted };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "contains") == 0 && expr->as.call.count == 2) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "contains expects two strings");
+            else {
+                Value result = { .kind = V_BOOL, .as.boolean = strstr(args[0].as.string, args[1].as.string) != NULL };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "clamp") == 0 && expr->as.call.count == 3) {
+            double value, low, high;
+            if (!number_value(args[0], &value, expr->line) || !number_value(args[1], &low, expr->line) ||
+                !number_value(args[2], &high, expr->line)) { free(args); return nil_value(); }
+            if (low > high) report_error(expr->line, "clamp lower bound exceeds upper bound");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = fmin(fmax(value, low), high) };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "lerp") == 0 && expr->as.call.count == 3) {
+            double from, to, amount;
+            if (!number_value(args[0], &from, expr->line) || !number_value(args[1], &to, expr->line) ||
+                !number_value(args[2], &amount, expr->line)) { free(args); return nil_value(); }
+            Value result = { .kind = V_NUMBER, .as.number = from + (to - from) * amount };
+            free(args); return result;
+        } else if (strcmp(name, "type") == 0 && expr->as.call.count == 1) {
+            const char *type_name = "void";
+            switch (args[0].kind) {
+                case V_NIL: type_name = "void"; break;
+                case V_NUMBER: type_name = "number"; break;
+                case V_STRING: type_name = "string"; break;
+                case V_BOOL: type_name = "boolean"; break;
+                case V_FUNCTION: type_name = "function"; break;
+                case V_MEMORY: type_name = "memory"; break;
+            }
+            Value result = { .kind = V_STRING, .as.string = copy_range(type_name, strlen(type_name)) };
+            free(args); return result;
+        } else if (strcmp(name, "length") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "length expects a string");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = (double)strlen(args[0].as.string) };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "tonumber") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind == V_NUMBER) { Value result = args[0]; free(args); return result; }
+            if (args[0].kind != V_STRING) report_error(expr->line, "tonumber expects a string or number");
+            else {
+                char *end = NULL;
+                errno = 0;
+                double parsed = strtod(args[0].as.string, &end);
+                while (end && isspace((unsigned char)*end)) ++end;
+                if (errno == ERANGE || end == args[0].as.string || !end || *end) report_error(expr->line, "tonumber could not parse the string");
+                else { Value result = { .kind = V_NUMBER, .as.number = parsed }; free(args); return result; }
+            }
+        } else if ((strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 ||
+                    strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 ||
+                    strcmp(name, "round") == 0 || strcmp(name, "sin") == 0 ||
+                    strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 ||
+                    strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0) && expr->as.call.count == 1) {
+            double x;
+            if (!number_value(args[0], &x, expr->line)) { free(args); return nil_value(); }
+            double result_number = x;
+            if (strcmp(name, "abs") == 0) result_number = fabs(x);
+            else if (strcmp(name, "sqrt") == 0) result_number = sqrt(x);
+            else if (strcmp(name, "floor") == 0) result_number = floor(x);
+            else if (strcmp(name, "ceil") == 0) result_number = ceil(x);
+            else if (strcmp(name, "round") == 0) result_number = round(x);
+            else if (strcmp(name, "sin") == 0) result_number = sin(x);
+            else if (strcmp(name, "cos") == 0) result_number = cos(x);
+            else if (strcmp(name, "tan") == 0) result_number = tan(x);
+            else if (strcmp(name, "log") == 0) result_number = log(x);
+            else if (strcmp(name, "exp") == 0) result_number = exp(x);
+            else if (strcmp(name, "sign") == 0) result_number = (x > 0) - (x < 0);
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
+            double x, y;
+            if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "pow") == 0 ? pow(x, y) :
+                                   (strcmp(name, "min") == 0 ? fmin(x, y) : fmax(x, y));
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
         } else if (strcmp(name, "memread") == 0 && expr->as.call.count == 2) {
             double index;
             if (args[0].kind != V_MEMORY || !number_value(args[1], &index, expr->line)) report_error(expr->line, "memread expects (memory, index)");
@@ -621,6 +720,14 @@ static Value evaluate(Expr *expr, Env *env) {
         else if (equal && left.kind == V_MEMORY) equal = left.as.memory == right.as.memory;
         return (Value){ .kind = V_BOOL, .as.boolean = strcmp(op, "==") == 0 ? equal : !equal };
     }
+    if (strcmp(op, "..") == 0 && left.kind == V_STRING && right.kind == V_STRING) {
+        size_t a_len = strlen(left.as.string), b_len = strlen(right.as.string);
+        char *joined = malloc(a_len + b_len + 1);
+        if (!joined) { fputs("out of memory\\n", stderr); exit(2); }
+        memcpy(joined, left.as.string, a_len);
+        memcpy(joined + a_len, right.as.string, b_len + 1);
+        return (Value){ .kind = V_STRING, .as.string = joined };
+    }
     if (strcmp(op, "+") == 0 && left.kind == V_STRING && right.kind == V_STRING) {
         size_t a = strlen(left.as.string), b = strlen(right.as.string);
         char *joined = malloc(a + b + 1); memcpy(joined, left.as.string, a); memcpy(joined + a, right.as.string, b + 1);
@@ -635,9 +742,18 @@ static Value evaluate(Expr *expr, Env *env) {
     if (strcmp(op, "+") == 0) return (Value){ .kind = V_NUMBER, .as.number = a + b };
     if (strcmp(op, "-") == 0) return (Value){ .kind = V_NUMBER, .as.number = a - b };
     if (strcmp(op, "*") == 0) return (Value){ .kind = V_NUMBER, .as.number = a * b };
+    if (strcmp(op, "**") == 0) {
+        double result = pow(a, b);
+        if (!isfinite(result)) { report_error(expr->line, "exponentiation produced a non-finite result"); return nil_value(); }
+        return (Value){ .kind = V_NUMBER, .as.number = result };
+    }
     if (strcmp(op, "/") == 0) {
         if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
         return (Value){ .kind = V_NUMBER, .as.number = a / b };
+    }
+    if (strcmp(op, "//") == 0) {
+        if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
+        return (Value){ .kind = V_NUMBER, .as.number = floor(a / b) };
     }
     if (strcmp(op, "%") == 0) {
         if (b == 0) { report_error(expr->line, "division by zero"); return nil_value(); }
