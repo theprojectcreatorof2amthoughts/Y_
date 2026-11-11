@@ -403,7 +403,7 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
             stmt->as.loop.condition = parse_expression(p, 1);
             expect_keyword(p, "execute");
             stmt->as.loop.body = parse_block(p, false);
-            expect_any_keyword(p, "done", "end");
+            expect_keyword(p, "done");
         } else if (match_keyword(p, "give")) {
             stmt = new_stmt(S_RETURN, start.line);
             if (peek(p)->kind != T_SEMI && !keyword(p, "done") && peek(p)->kind != T_EOF)
