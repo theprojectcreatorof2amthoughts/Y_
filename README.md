@@ -62,4 +62,6 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `examples/` contains complete scripts; `tests/` contains smoke and error-path tests.
 - `docs/` describes the syntax and internal architecture.
 
-New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, string helpers, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.\n\nStart with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
+New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, string helpers, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
+
+Start with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
