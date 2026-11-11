@@ -148,6 +148,17 @@ static void tokenize(Parser *parser, const char *source) {
             const char *start = cursor;
             while (is_name_char(*cursor)) ++cursor;
             size_t directive_length = (size_t)(cursor - start);
+            if (directive_length == 7 && strncmp(start, "inptype", 7) == 0) {
+                while (*cursor == ' ' || *cursor == '\\t') ++cursor;
+                if (*cursor != '(') {
+                    report_error(line, "expected '(' after !#inptype");
+                    break;
+                }
+                token.kind = T_NAME;
+                token.text = copy_range("input", 5);
+                add_token(parser, token);
+                continue;
+            }
             if (directive_length == 6 && strncmp(start, "libinc", 6) == 0) {
                 token.kind = T_LIBINC;
                 token.text = copy_range(start, directive_length);
