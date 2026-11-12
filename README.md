@@ -6,13 +6,13 @@ Y_ is a modular scripting language implemented in portable C11. It keeps its ori
 
 ```sh
 make
-./y_ examples/hello.yc
-./y_ examples/project.yc
+./ylang examples/hello.yc
+./ylang examples/project.yc
 ```
 
-Run `./y_` without a file to start the interactive prompt. No third-party libraries are required.
+Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
 
-The initial `gyy` bootstrap driver accepts textual LLVM IR (`.ll`) and uses Clang to produce native executables. The Y_ source frontend is not yet implemented; see [compiler/README.md](compiler/README.md).
+The interpreter executable is named `ylang` (not `y_`). The initial `gyy` bootstrap driver accepts textual LLVM IR (`.ll`) and uses Clang to produce native executables. The Y_ source frontend is not yet implemented; see [compiler/README.md](compiler/README.md).
 
 ## Language
 
@@ -38,7 +38,9 @@ writescrn >^ memread(!$scratch, 0)
 
 `writescrn >^ expression` prints a value to standard output; `errstate <^ expression` prints a diagnostic to standard error. `!$name` reads a custom variable and `!$name = expression` assigns it. Use `!${name-with-symbols}` for custom variable names containing punctuation or spaces. `memdesig !$name, size` allocates a zeroed byte buffer; `memread(buffer, index)` and `memwrite(buffer, index, byte)` access it. Indices are zero-based.
 
-`!#inclib %stdlib/math.hly%` and similar paths import `.hly` Header Library Y files embedded in the executable at build time. `!#libinc "path.hly"` loads and executes an external `.hly` Header Library Y file from disk. Both `!#inclib` and `!#libinc` accept `.hly` libraries: `!#inclib` selects a build-embedded module, while `!#libinc` reads a file at runtime. The old `.yl` extension is no longer supported. `!#adeq "path.yaq"` loads an external Adequit into the current program environment; an Adequit can import `.hly` libraries, calculate values, and define procedures for the `.yc` program to use. Adequits execute in the caller's environment, so their procedures and variables are available after the import. Example: `./y_ examples/adequit_demo.yc` runs a short program that imports `examples/quicktools.yaq`; that Adequit loads `stdlib/math.hly` and exposes reusable procedures. `.yaq` files are executable Adequits, while `.hly` means Header Library Y.\n\n`!#inptype("prompt")` displays the prompt, reads one line from standard input, and returns the entered text as a string; use `!#inptype("")` for input without a prompt. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
+`!#inclib %stdlib/math.hly%` and similar paths import `.hly` Header Library Y files embedded in the executable at build time. `!#libinc "path.hly"` loads and executes an external `.hly` Header Library Y file from disk. Both `!#inclib` and `!#libinc` accept `.hly` libraries: `!#inclib` selects a build-embedded module, while `!#libinc` reads a file at runtime. The old `.yl` extension is no longer supported. `!#adeq "path.yaq"` loads an external Adequit into the current program environment; an Adequit can import `.hly` libraries, calculate values, and define procedures for the `.yc` program to use. Adequits execute in the caller's environment, so their procedures and variables are available after the import. Example: `./ylang examples/adequit_demo.yc` runs a short program that imports `examples/quicktools.yaq`; that Adequit loads `stdlib/math.hly` and exposes reusable procedures. `.yaq` files are executable Adequits, while `.hly` means Header Library Y.
+
+`!#inptype("prompt")` displays the prompt, reads one line from standard input, and returns the entered text as a string; use `!#inptype("")` for input without a prompt. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
 
 ## HTML with Y_
 
@@ -46,7 +48,7 @@ writescrn >^ memread(!$scratch, 0)
 
 ```sh
 make
-./y_ stdhtml/demo.yc > page.html
+./ylang stdhtml/demo.yc > page.html
 ```
 
 The helpers insert supplied content as raw markup; escape untrusted text before using it in a page.

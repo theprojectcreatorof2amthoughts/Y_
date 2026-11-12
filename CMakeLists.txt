@@ -38,7 +38,7 @@ add_custom_command(
 )
 set_source_files_properties("${EMBEDDED_SOURCE}" PROPERTIES GENERATED TRUE)
 
-add_executable(y_
+add_executable(ylang
     src/main.c
     src/y_.c
     src/memory.c
@@ -46,16 +46,16 @@ add_executable(y_
     src/embedded_libraries.h
     "${EMBEDDED_SOURCE}"
 )
-target_include_directories(y_ PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_compile_options(y_ PRIVATE -Wall -Wextra -Wpedantic)
+target_include_directories(ylang PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_options(ylang PRIVATE -Wall -Wextra -Wpedantic)
 if(NOT WIN32)
-    target_link_libraries(y_ PRIVATE m)
+    target_link_libraries(ylang PRIVATE m)
 endif()
 
 add_executable(gyy compiler/gyy.c)
 target_compile_options(gyy PRIVATE -Wall -Wextra -Wpedantic)
 
-install(TARGETS y_ gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS ylang gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 set(CPACK_PACKAGE_NAME "y-language")
 set(CPACK_PACKAGE_VENDOR "Y_ Project")
