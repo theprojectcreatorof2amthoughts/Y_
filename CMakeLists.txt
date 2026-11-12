@@ -52,7 +52,7 @@ if(NOT WIN32)
     target_link_libraries(y_ PRIVATE m)
 endif()
 
-install(TARGETS y_ RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS y_ gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 set(CPACK_PACKAGE_NAME "y-language")
 set(CPACK_PACKAGE_VENDOR "Y_ Project")
