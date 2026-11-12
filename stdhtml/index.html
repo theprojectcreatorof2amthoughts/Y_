@@ -96,8 +96,8 @@
         <h1>stdhtml</h1>
         <p>Small Y_ helpers for assembling HTML strings. Import a module into a script, compose elements, then redirect Y_ output to an <code>.html</code> file.</p>
         <div class="import-row">
-          <code>!#inclib %stdhtml/document.yl%</code>
-          <button type="button" data-copy="!#inclib %stdhtml/document.yl%">Copy import</button>
+          <code>!#inclib %stdhtml/document.hly%</code>
+          <button type="button" data-copy="!#inclib %stdhtml/document.hly%">Copy import</button>
         </div>
       </section>
       <div class="toolbar">
@@ -106,9 +106,9 @@
       </div>
       <section class="module" id="elements" data-searchable="elements html tag heading paragraph div section main header footer strong emphasis code pre list item break rule">
         <div>
-          <h3>elements.yl</h3>
+          <h3>elements.hly</h3>
           <p class="desc">Common paired tags and a couple of void tags. Content is inserted as provided.</p>
-          <span class="signature">!#inclib %stdhtml/elements.yl%</span>
+          <span class="signature">!#inclib %stdhtml/elements.hly%</span>
         </div>
         <div class="module-body">
           <code class="signature">html_h1(content) · html_h2(content) · html_p(content)</code>
@@ -116,14 +116,14 @@
           <pre>stash heading = html_h1("Y_ page")
 stash copy = html_p("Built from Y_ strings.")
 writescrn &gt;^ heading + copy</pre>
-          <button type="button" data-copy="!#inclib %stdhtml/elements.yl%">Copy import</button>
+          <button type="button" data-copy="!#inclib %stdhtml/elements.hly%">Copy import</button>
         </div>
       </section>
       <section class="module" id="attributes" data-searchable="attributes link anchor image button stylesheet script source url alt">
         <div>
-          <h3>attributes.yl</h3>
+          <h3>attributes.hly</h3>
           <p class="desc">Helpers for a few tags that carry attributes.</p>
-          <span class="signature">!#inclib %stdhtml/attributes.yl%</span>
+          <span class="signature">!#inclib %stdhtml/attributes.hly%</span>
         </div>
         <div class="module-body">
           <code class="signature">html_link(content, url)</code>
@@ -131,21 +131,21 @@ writescrn &gt;^ heading + copy</pre>
           <code class="signature">html_css_link(path) · html_script_link(path)</code>
           <pre>stash home = html_link("Home", "/")
 writescrn &gt;^ home</pre>
-          <button type="button" data-copy="!#inclib %stdhtml/attributes.yl%">Copy import</button>
+          <button type="button" data-copy="!#inclib %stdhtml/attributes.hly%">Copy import</button>
         </div>
       </section>
       <section class="module" id="document" data-searchable="document page html_page html_page_start html_page_end doctype head body">
         <div>
-          <h3>document.yl</h3>
-          <p class="desc">Page wrapper with a doctype, UTF-8 metadata, viewport metadata, title, and body tags. Imports elements.yl for page helpers.</p>
-          <span class="signature">!#inclib %stdhtml/document.yl%</span>
+          <h3>document.hly</h3>
+          <p class="desc">Page wrapper with a doctype, UTF-8 metadata, viewport metadata, title, and body tags. Imports elements.hly for page helpers.</p>
+          <span class="signature">!#inclib %stdhtml/document.hly%</span>
         </div>
         <div class="module-body">
           <code class="signature">html_page(title, body)</code>
           <code class="signature">html_page_start(title) · html_page_end</code>
           <pre>stash body = html_main(html_h1("Hello"))
 writescrn &gt;^ html_page("My page", body)</pre>
-          <button type="button" data-copy="!#inclib %stdhtml/document.yl%">Copy import</button>
+          <button type="button" data-copy="!#inclib %stdhtml/document.hly%">Copy import</button>
         </div>
       </section>
       <section class="notice" id="safety">
