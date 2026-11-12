@@ -69,12 +69,12 @@ errstate <^ "a diagnostic message"
 memdesig !$bytes, 32
 memwrite(!$bytes, 0, 72)
 stash first_byte = memread(!$bytes, 0)
-!#inclib %math.hly%
+!#inclib %stdlib/math.hly%
 ```
 
 `writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.hly%` imports a `.hly` Header Library Y file embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files. `!#adeq "path.yaq"` loads an external Adequit file into the current environment. Adequits can import `.hly` libraries, perform calculations, and define procedures that the importing `.yc` file can call.
 
-## Reading input
+### Header Library Y (`.hly`) and Adequits (`.yaq`)\n\n`.hly` means **Header Library Y**. These reusable library files are discovered and embedded by both build systems; `!#inclib %stdlib/math.hly%` executes the selected library in the current environment.\n\nAn **Adequit** is a `.yaq` executable helper file. Load it from a `.yc` program with `!#adeq "path/to/helper.yaq"`. The Adequit runs in the importing program's environment, so it can import `.hly` libraries, calculate or determine values, and define procedures that the `.yc` program can call afterward. For example, `examples/quicktools.yaq` imports `stdlib/math.hly` and defines `quick_bound` and `quick_grade`; `examples/adequit_demo.yc` is the short program that uses them. Adequit imports are external files and use paths relative to the process working directory, like `!#libinc`. Nested source imports have a depth limit of 64.\n\n## Reading input
 
 Use `!#inptype("prompt")` as an expression to display a prompt, read one line from standard input, and return the entered text as a string. An empty prompt reads input without displaying anything:
 
