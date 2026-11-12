@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,13 +11,13 @@
 #include "embedded_libraries.h"
 #include "y_.h"
 
-#define Y_VERSION "0.2.0"
+#define Y_VERSION "0.4.0"
 
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
     T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_POWER, T_IDIV, T_CONCAT, T_OUTPUT, T_ERROR_OUTPUT,
-    T_LIBINC, T_EMBEDDED_LIBRARY
+    T_LIBINC, T_EMBEDDED_LIBRARY, T_ADEQUIT
 } TokenKind;
 
 typedef struct { TokenKind kind; char *text; double number; int line; } Token;
@@ -49,7 +50,7 @@ struct Expr {
 };
 
 typedef enum { S_LOCAL, S_ASSIGN, S_EXPR, S_OUTPUT, S_ERROR_OUTPUT, S_MEMORY, S_INCLUDE,
-               S_EMBEDDED_INCLUDE,
+               S_EMBEDDED_INCLUDE, S_ADEQUIT,
                S_FUNCTION, S_RETURN, S_IF, S_WHILE, S_BREAK } StmtKind;
 struct Stmt {
     StmtKind kind;
@@ -165,17 +166,30 @@ static void tokenize(Parser *parser, const char *source) {
                 add_token(parser, token);
                 continue;
             }
+            if (directive_length == 4 && strncmp(start, "adeq", 4) == 0) {
+                while (*cursor == ' ' || *cursor == '\t') ++cursor;
+                if (*cursor != '"') { report_error(line, "expected a quoted .yaq path after !#adeq"); break; }
+                ++cursor;
+                const char *path_start = cursor;
+                while (*cursor && *cursor != '"' && *cursor != '\n') ++cursor;
+                if (*cursor != '"' || cursor == path_start) { report_error(line, "expected a non-empty .yaq path"); break; }
+                token.kind = T_ADEQUIT;
+                token.text = copy_range(path_start, (size_t)(cursor - path_start));
+                ++cursor;
+                add_token(parser, token);
+                continue;
+            }
             if (directive_length != 6 || strncmp(start, "inclib", 6) != 0) {
-                report_error(line, "unknown directive; expected !#libinc or !#inclib");
+                report_error(line, "unknown directive; expected !#libinc, !#adeq, or !#inclib");
                 break;
             }
             while (*cursor == ' ' || *cursor == '\t') ++cursor;
-            if (*cursor != '%') { report_error(line, "expected '%' before embedded .yl library path"); break; }
+            if (*cursor != '%') { report_error(line, "expected '%' before embedded .hly library path"); break; }
             ++cursor;
             const char *path_start = cursor;
             while (*cursor && *cursor != '%' && *cursor != '\n') ++cursor;
             if (*cursor != '%' || cursor == path_start) {
-                report_error(line, "expected a non-empty .yl path between '%' markers");
+                report_error(line, "expected a non-empty .hly path between '%' markers");
                 break;
             }
             token.kind = T_EMBEDDED_LIBRARY;
@@ -431,6 +445,11 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         } else if (match(p, T_EMBEDDED_LIBRARY)) {
             stmt = new_stmt(S_EMBEDDED_INCLUDE, start.line);
             stmt->as.embedded_library = previous(p)->text;
+        } else if (match(p, T_ADEQUIT)) {
+            stmt = new_stmt(S_ADEQUIT, start.line);
+            stmt->as.expression = new_expr(E_VALUE, start.line);
+            stmt->as.expression->as.value.kind = V_STRING;
+            stmt->as.expression->as.value.as.string = previous(p)->text;
         } else if (peek(p)->kind == T_CUSTOM || peek(p)->kind == T_NAME) {
             Token name = *peek(p); ++p->at;
             if (match(p, T_ASSIGN)) {
@@ -524,7 +543,7 @@ static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "startswith") == 0 || strcmp(name, "endswith") == 0 || strcmp(name, "substring") == 0 || strcmp(name, "replace") == 0 || strcmp(name, "repeat") == 0 || strcmp(name, "reverse") == 0 || strcmp(name, "charat") == 0 || strcmp(name, "isfinite") == 0 || strcmp(name, "isnan") == 0 || strcmp(name, "hypot") == 0 || strcmp(name, "atan2") == 0 || strcmp(name, "radians") == 0 || strcmp(name, "degrees") == 0 || strcmp(name, "sum") == 0 || strcmp(name, "average") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
@@ -570,10 +589,127 @@ static Value call_function(Expr *expr, Env *env) {
                 Value result = { .kind = V_STRING, .as.string = converted };
                 free(args); return result;
             }
-        } else if (strcmp(name, "contains") == 0 && expr->as.call.count == 2) {
-            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "contains expects two strings");
+        } else if ((strcmp(name, "contains") == 0 || strcmp(name, "startswith") == 0 || strcmp(name, "endswith") == 0) && expr->as.call.count == 2) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "string predicates expect two strings");
             else {
-                Value result = { .kind = V_BOOL, .as.boolean = strstr(args[0].as.string, args[1].as.string) != NULL };
+                const char *source = args[0].as.string, *part = args[1].as.string;
+                size_t source_length = strlen(source), part_length = strlen(part);
+                bool matches = strcmp(name, "contains") == 0 ? strstr(source, part) != NULL :
+                               strcmp(name, "startswith") == 0 ? part_length <= source_length && strncmp(source, part, part_length) == 0 :
+                               part_length <= source_length && strcmp(source + source_length - part_length, part) == 0;
+                Value result = { .kind = V_BOOL, .as.boolean = matches };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "substring") == 0 && (expr->as.call.count == 2 || expr->as.call.count == 3)) {
+            double start_number, count_number = -1;
+            if (args[0].kind != V_STRING || !number_value(args[1], &start_number, expr->line) ||
+                (expr->as.call.count == 3 && !number_value(args[2], &count_number, expr->line))) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "substring expects a string and numeric indexes");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(start_number) != start_number || start_number < -(double)source_length || start_number > (double)source_length ||
+                    (expr->as.call.count == 3 && (floor(count_number) != count_number || count_number < 0))) {
+                    report_error(expr->line, "substring indexes must be whole numbers within the string");
+                } else {
+                    long start = (long)start_number;
+                    if (start < 0) start += (long)source_length;
+                    size_t available = source_length - (size_t)start;
+                    size_t count = expr->as.call.count == 3 && count_number < (double)available ? (size_t)count_number : available;
+                    Value result = { .kind = V_STRING, .as.string = copy_range(args[0].as.string + start, count) };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "charat") == 0 && expr->as.call.count == 2) {
+            double index_number;
+            if (args[0].kind != V_STRING || !number_value(args[1], &index_number, expr->line)) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "charat expects a string and an index");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(index_number) != index_number || index_number < -(double)source_length || index_number >= (double)source_length) report_error(expr->line, "charat index is outside the string");
+                else {
+                    long index = (long)index_number;
+                    if (index < 0) index += (long)source_length;
+                    Value result = { .kind = V_STRING, .as.string = copy_range(args[0].as.string + index, 1) };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "replace") == 0 && expr->as.call.count == 3) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING || args[2].kind != V_STRING) report_error(expr->line, "replace expects three strings");
+            else {
+                const char *source = args[0].as.string, *needle = args[1].as.string, *replacement = args[2].as.string;
+                size_t source_length = strlen(source), needle_length = strlen(needle), replacement_length = strlen(replacement), occurrences = 0;
+                if (needle_length == 0) report_error(expr->line, "replace search text cannot be empty");
+                else if (source_length > 16777216u) report_error(expr->line, "replace source exceeds 16 MiB");
+                else {
+                    for (const char *scan = source; (scan = strstr(scan, needle)) != NULL; scan += needle_length) ++occurrences;
+                    size_t output_length = source_length;
+                    if (replacement_length >= needle_length) {
+                        size_t growth = replacement_length - needle_length;
+                        if (growth && occurrences > (16777216u - source_length) / growth) output_length = 16777217u;
+                        else output_length += occurrences * growth;
+                    } else output_length -= occurrences * (needle_length - replacement_length);
+                    if (output_length > 16777216u) report_error(expr->line, "replace result exceeds 16 MiB");
+                    else {
+                        char *output = malloc(output_length + 1);
+                        if (!output) { fputs("out of memory\n", stderr); exit(2); }
+                        const char *scan = source;
+                        char *write = output;
+                        const char *match;
+                        while ((match = strstr(scan, needle)) != NULL) {
+                            size_t prefix = (size_t)(match - scan);
+                            memcpy(write, scan, prefix); write += prefix;
+                            memcpy(write, replacement, replacement_length); write += replacement_length;
+                            scan = match + needle_length;
+                        }
+                        size_t tail = strlen(scan); memcpy(write, scan, tail); write += tail; *write = '\0';
+                        Value result = { .kind = V_STRING, .as.string = output };
+                        free(args); return result;
+                    }
+                }
+            }
+        } else if (strcmp(name, "repeat") == 0 && expr->as.call.count == 2) {
+            double count_number;
+            if (args[0].kind != V_STRING || !number_value(args[1], &count_number, expr->line)) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "repeat expects a string and a count");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(count_number) != count_number || count_number < 0 || count_number > 1000000 ||
+                    (source_length && count_number > 16777216.0 / (double)source_length)) report_error(expr->line, "repeat count or result size is out of range");
+                else {
+                    size_t count = (size_t)count_number, output_length = source_length * count;
+                    char *output = malloc(output_length + 1);
+                    if (!output) { fputs("out of memory\n", stderr); exit(2); }
+                    for (size_t i = 0; i < count; ++i) memcpy(output + i * source_length, args[0].as.string, source_length);
+                    output[output_length] = '\0';
+                    Value result = { .kind = V_STRING, .as.string = output };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "reverse") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "reverse expects a string");
+            else {
+                size_t n = strlen(args[0].as.string);
+                char *output = copy_range(args[0].as.string, n);
+                for (size_t i = 0; i < n / 2; ++i) { char swap = output[i]; output[i] = output[n - i - 1]; output[n - i - 1] = swap; }
+                Value result = { .kind = V_STRING, .as.string = output };
+                free(args); return result;
+            }
+        } else if ((strcmp(name, "isfinite") == 0 || strcmp(name, "isnan") == 0) && expr->as.call.count == 1) {
+            if (args[0].kind != V_NUMBER) report_error(expr->line, "isfinite/isnan expects a number");
+            else {
+                Value result = { .kind = V_BOOL, .as.boolean = strcmp(name, "isfinite") == 0 ? isfinite(args[0].as.number) : isnan(args[0].as.number) };
+                free(args); return result;
+            }
+        } else if ((strcmp(name, "sum") == 0 || strcmp(name, "average") == 0) && expr->as.call.count > 0) {
+            double total = 0;
+            for (size_t i = 0; i < expr->as.call.count; ++i) {
+                double number;
+                if (!number_value(args[i], &number, expr->line)) { free(args); return nil_value(); }
+                total += number;
+            }
+            if (!isfinite(total)) report_error(expr->line, "sum/average produced a non-finite result");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = strcmp(name, "average") == 0 ? total / (double)expr->as.call.count : total };
                 free(args); return result;
             }
         } else if (strcmp(name, "clamp") == 0 && expr->as.call.count == 3) {
@@ -641,6 +777,21 @@ static Value call_function(Expr *expr, Env *env) {
             else if (strcmp(name, "sign") == 0) result_number = (x > 0) - (x < 0);
             if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
             else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "hypot") == 0 || strcmp(name, "atan2") == 0) && expr->as.call.count == 2) {
+            double x, y;
+            if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "hypot") == 0 ? hypot(x, y) : atan2(x, y);
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "radians") == 0 || strcmp(name, "degrees") == 0) && expr->as.call.count == 1) {
+            double angle;
+            if (!number_value(args[0], &angle, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "radians") == 0 ? angle * (3.14159265358979323846 / 180.0) : angle * (180.0 / 3.14159265358979323846);
+            if (!isfinite(result_number)) report_error(expr->line, "angle conversion produced a non-finite result");
+            else {
+            Value result = { .kind = V_NUMBER, .as.number = result_number };
+            free(args); return result;
+            }
         } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
             double x, y;
             if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
@@ -788,7 +939,12 @@ static Result execute(Stmt *stmt, Env *env) {
         }
         case S_INCLUDE: {
             Value path = evaluate(stmt->as.expression, env);
-            if (path.kind != V_STRING) { report_error(stmt->line, "!#libinc expects a quoted path"); break; }
+            if (path.kind != V_STRING) { report_error(stmt->line, "!#libinc expects a quoted .hly path"); break; }
+            size_t path_length = strlen(path.as.string);
+            if (path_length <= 4 || strcmp(path.as.string + path_length - 4, ".hly") != 0) {
+                report_error(stmt->line, "!#libinc imports must name a .hly Header Library Y file");
+                break;
+            }
             char *source = read_entire_file(path.as.string, NULL);
             if (source) { run_source(source, path.as.string, env); free(source); }
             else failed = true;
@@ -799,11 +955,11 @@ static Result execute(Stmt *stmt, Env *env) {
             const char *filename = strrchr(path, '/');
             filename = filename ? filename + 1 : path;
             size_t filename_length = strlen(filename);
-            if (filename_length <= 3 || strcmp(filename + filename_length - 3, ".yl") != 0) {
-                report_error(stmt->line, "embedded imports must name a .yl file");
+            if (filename_length <= 4 || strcmp(filename + filename_length - 4, ".hly") != 0) {
+                report_error(stmt->line, "embedded imports must name a .hly file");
                 break;
             }
-            char *library_name = copy_range(filename, filename_length - 3);
+            char *library_name = copy_range(filename, filename_length - 4);
             const char *source = y_embedded_library(library_name);
             if (!source) {
                 char message[256];
@@ -814,6 +970,19 @@ static Result execute(Stmt *stmt, Env *env) {
             }
             run_source(source, library_name, env);
             free(library_name);
+            break;
+        }
+        case S_ADEQUIT: {
+            Value path = evaluate(stmt->as.expression, env);
+            if (path.kind != V_STRING) { report_error(stmt->line, "!#adeq expects a quoted .yaq path"); break; }
+            size_t path_length = strlen(path.as.string);
+            if (path_length <= 4 || strcmp(path.as.string + path_length - 4, ".yaq") != 0) {
+                report_error(stmt->line, "Adequit imports must name a .yaq file");
+                break;
+            }
+            char *source = read_entire_file(path.as.string, NULL);
+            if (source) { run_source(source, path.as.string, env); free(source); }
+            else failed = true;
             break;
         }
         case S_FUNCTION: {
@@ -848,7 +1017,13 @@ static Result execute_list(Stmt *stmt, Env *env) {
     return (Result){0};
 }
 
+static unsigned source_depth;
 static bool run_source(const char *source, const char *path, Env *env) {
+    if (source_depth >= 64) {
+        report_error(1, "source import depth limit exceeded");
+        return false;
+    }
+    ++source_depth;
     const char *old_path = active_path; active_path = path;
     Parser parser = { .path = path };
     tokenize(&parser, source);
@@ -856,6 +1031,7 @@ static bool run_source(const char *source, const char *path, Env *env) {
     if (!failed && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
     if (!failed) execute_list(program, env);
     active_path = old_path;
+    --source_depth;
     return !failed;
 }
 

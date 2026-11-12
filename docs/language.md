@@ -44,7 +44,7 @@ Additional operators:
 - `//` performs floor division.
 - `..` concatenates two strings.
 
-`+` continues to concatenate two strings as well. Only `void` and `no` are falsey.
+`+` continues to concatenate two strings as well. Only `void` and `no` are falsey. String positions and lengths are byte-based and zero-indexed; `substring` and `charat` accept negative positions counted from the end. `replace` replaces every non-overlapping match, and `repeat` is limited to a 16 MiB result.
 
 ## Built-in functions
 
@@ -53,7 +53,10 @@ Additional operators:
 - `tonumber(value)` converts a numeric string to a number and reports invalid input.
 - Math: `abs`, `sqrt`, `floor`, `ceil`, `round`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `log`, and `exp`. Trigonometric functions use radians.
 - Predicates: `isnumber`, `isstring`, `isboolean`, and `isvoid` return booleans.
-- Strings: `upper`, `lower`, and `contains` (substring search).
+- Strings: `upper`, `lower`, `contains`, `startswith`, `endswith`, `substring`, `charat`, `replace`, `repeat`, and `reverse`.
+- Numeric aggregation: `sum(value, ...)` and `average(value, ...)` accept one or more numbers.
+- Numeric checks: `isfinite(value)` and `isnan(value)` inspect numeric values.
+- Geometry and angles: `hypot(x, y)`, `atan2(y, x)` (radians), `radians(degrees)`, and `degrees(radians)`.
 - Numeric helpers: `sign`, `clamp(value, low, high)`, and `lerp(from, to, amount)` (unclamped interpolation).
 
 `name define = yes` checks whether a variable has been defined, even if its value is `void`; use `no` to check that it has not been defined. This operator does not evaluate the variable's value.
@@ -66,12 +69,12 @@ errstate <^ "a diagnostic message"
 memdesig !$bytes, 32
 memwrite(!$bytes, 0, 72)
 stash first_byte = memread(!$bytes, 0)
-!#inclib %math.yl%
+!#inclib %stdlib/math.hly%
 ```
 
-`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files.
+`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.hly%` imports a `.hly` Header Library Y file embedded in the executable at build time; its path can include folders. `!#libinc "path.hly"` loads an external `.hly` Header Library Y file directly from disk at runtime. Both `!#inclib` and `!#libinc` require `.hly`: `!#inclib` imports a build-embedded library, while `!#libinc` imports an external library file. The old `.yl` extension is no longer accepted. `!#adeq "path.yaq"` loads an external Adequit file into the current environment. Adequits can import `.hly` libraries, perform calculations, and define procedures that the importing `.yc` file can call.
 
-## Reading input
+### Header Library Y (`.hly`) and Adequits (`.yaq`)\n\n`.hly` means **Header Library Y**. These reusable library files are discovered and embedded by both build systems; `!#inclib %stdlib/math.hly%` executes the selected library in the current environment.\n\nAn **Adequit** is a `.yaq` executable helper file. Load it from a `.yc` program with `!#adeq "path/to/helper.yaq"`. The Adequit runs in the importing program's environment, so it can import `.hly` libraries, calculate or determine values, and define procedures that the `.yc` program can call afterward. For example, `examples/quicktools.yaq` imports `stdlib/math.hly` and defines `quick_bound` and `quick_grade`; `examples/adequit_demo.yc` is the short program that uses them. Adequit imports are external files and use paths relative to the process working directory, like `!#libinc`. Nested source imports have a depth limit of 64.\n\n## Reading input
 
 Use `!#inptype("prompt")` as an expression to display a prompt, read one line from standard input, and return the entered text as a string. An empty prompt reads input without displaying anything:
 
@@ -86,4 +89,4 @@ The prompt must be a quoted string. End-of-file before any characters are read r
 
 Run `./y_` with no arguments to evaluate one-line snippets in a persistent environment. Run `./y_ path/to/script.yc` to execute a source file.
 
-Y_ keeps its own vocabulary. It does not use conventional `print`, `let`, `if`, `while`, or `return` keywords. Tables, coroutines, modules, and bytecode compilation are not currently supported.
+Y_ keeps its own vocabulary. It does not use conventional `print`, `let`, `if`, `while`, or `return` keywords. Tables, coroutines, and bytecode compilation are not currently supported.

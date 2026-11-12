@@ -1,4 +1,4 @@
-!#inclib %stdhtml/elements.yl%
+!#inclib %stdhtml/elements.hly%
 
 define html_page_start(title)
     give "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>" + title + "</title>\n</head>\n<body>\n"

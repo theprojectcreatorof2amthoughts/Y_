@@ -3,8 +3,8 @@ CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic
 
 .PHONY: all clean libraries FORCE
 
-LIBRARY_FILES := $(shell find . -type f -name '*.yl' -not -path './.git/*' -not -path './build/*' | LC_ALL=C sort)
-EMBEDDER := build/embed_yl
+LIBRARY_FILES := $(shell find . -type f -name '*.hly' -not -path './.git/*' -not -path './build/*' | LC_ALL=C sort)
+EMBEDDER := build/embed_hly
 EMBEDDED_SOURCE := build/embedded_libraries.c
 
 all: y_
@@ -13,7 +13,7 @@ libraries: $(EMBEDDED_SOURCE)
 
 FORCE:
 
-$(EMBEDDER): tools/embed_yl.c
+$(EMBEDDER): tools/embed_hly.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -o $@ $<
 

@@ -1,0 +1,20 @@
+## An Adequit packages reusable calculations for a short .yc program.
+## It imports a Header Library Y module and exposes one focused procedure.
+
+!#inclib %stdlib/math.hly%
+
+define quick_bound(value, low, high)
+    give math_clamp(value, low, high)
+done
+
+define quick_grade(score)
+    when score >= 90 doit
+        give "excellent"
+    else
+        when score >= 70 doit
+            give "good"
+        else
+            give "keep practicing"
+        done
+    done
+done

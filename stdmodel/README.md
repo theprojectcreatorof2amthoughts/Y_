@@ -4,20 +4,20 @@
 
 ## Modules
 
-- `vector2.yl` — 2D dot/cross products, component arithmetic, squared lengths and distances, perpendicular vectors, and interpolation.
-- `vector3.yl` — 3D dot/cross products, component arithmetic, squared lengths and distances, and interpolation.
-- `primitives.yl` — dimensions, surface areas, and volumes for boxes, spheres, cylinders, cones, toruses, pyramids, and prisms.
-- `transforms.yl` — component-wise translation, scaling, pivot scaling, range remapping, and clamping.
-- `mesh.yl` — triangle area/cross-product calculations and basic mesh topology/count helpers.
+- `vector2.hly` — 2D dot/cross products, component arithmetic, squared lengths and distances, perpendicular vectors, and interpolation.
+- `vector3.hly` — 3D dot/cross products, component arithmetic, squared lengths and distances, and interpolation.
+- `primitives.hly` — dimensions, surface areas, and volumes for boxes, spheres, cylinders, cones, toruses, pyramids, and prisms.
+- `transforms.hly` — component-wise translation, scaling, pivot scaling, range remapping, and clamping.
+- `mesh.hly` — triangle area/cross-product calculations and basic mesh topology/count helpers.
 
 ## Importing
 
-The build embeds every discovered `.yl` file, so import modules by their repository-relative path:
+The build embeds every discovered `.hly` file, so import modules by their repository-relative path:
 
 ```yl
-!#inclib %stdmodel/vector3.yl%
-!#inclib %stdmodel/primitives.yl%
-!#inclib %stdmodel/transforms.yl%
+!#inclib %stdmodel/vector3.hly%
+!#inclib %stdmodel/primitives.hly%
+!#inclib %stdmodel/transforms.hly%
 
 stash dot = model_vec3_dot(1, 2, 3, 4, 5, 6)
 stash volume = model_box_volume(2, 3, 4)
