@@ -69,10 +69,10 @@ errstate <^ "a diagnostic message"
 memdesig !$bytes, 32
 memwrite(!$bytes, 0, 72)
 stash first_byte = memread(!$bytes, 0)
-!#inclib %math.yl%
+!#inclib %math.hly%
 ```
 
-`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.yl%` imports a `.yl` library embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files.
+`writescrn >^` prints one value and a newline to standard output. `errstate <^` prints one value and a newline to standard error without marking the program as failed. `memdesig` creates a zero-filled byte buffer up to 16 MiB; reads and writes use zero-based integer indexes. `!#inclib %path.hly%` imports a `.hly` Header Library Y file embedded in the executable at build time; its path can include folders. `!#libinc "path.yc"` remains available for external `.yc` source files. `!#adeq "path.yaq"` loads an external Adequit file into the current environment. Adequits can import `.hly` libraries, perform calculations, and define procedures that the importing `.yc` file can call.
 
 ## Reading input
 
