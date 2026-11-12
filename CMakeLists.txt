@@ -7,15 +7,15 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-file(GLOB_RECURSE YL_LIBRARIES
+file(GLOB_RECURSE HLY_LIBRARIES
     CONFIGURE_DEPENDS
     LIST_DIRECTORIES false
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.hly"
 )
-list(FILTER YL_LIBRARIES EXCLUDE REGEX "(^|/)\\.git(/|$)")
-list(FILTER YL_LIBRARIES EXCLUDE REGEX "(^|/)(build|cmake-build[^/]*)/")
-list(SORT YL_LIBRARIES)
+list(FILTER HLY_LIBRARIES EXCLUDE REGEX "(^|/)\\.git(/|$)")
+list(FILTER HLY_LIBRARIES EXCLUDE REGEX "(^|/)(build|cmake-build[^/]*)/")
+list(SORT HLY_LIBRARIES)
 
 set(GENERATED_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
 set(EMBEDDER_EXECUTABLE "${CMAKE_CURRENT_BINARY_DIR}/embed_hly")
@@ -30,8 +30,8 @@ set_target_properties(hly_embedder PROPERTIES
 add_custom_command(
     OUTPUT "${EMBEDDED_SOURCE}"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${GENERATED_DIRECTORY}"
-    COMMAND "$<TARGET_FILE:hly_embedder>" "${EMBEDDED_SOURCE}" ${YL_LIBRARIES}
-    DEPENDS hly_embedder ${YL_LIBRARIES} src/embedded_libraries.h
+    COMMAND "$<TARGET_FILE:hly_embedder>" "${EMBEDDED_SOURCE}" ${HLY_LIBRARIES}
+    DEPENDS hly_embedder ${HLY_LIBRARIES} src/embedded_libraries.h
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     VERBATIM
     COMMENT "Embedding Y_ HLY libraries"
