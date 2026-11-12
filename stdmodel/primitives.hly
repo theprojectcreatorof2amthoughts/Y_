@@ -1,0 +1,62 @@
+## Dimension and surface calculations for common modeling primitives.
+## Lengths are in user-defined units; areas and volumes use squared/cubed units.
+
+define model_box_volume(width, height, depth)
+    give width * height * depth
+done
+
+define model_box_surface_area(width, height, depth)
+    give 2 * (width * height + width * depth + height * depth)
+done
+
+define model_box_diagonal_squared(width, height, depth)
+    give width * width + height * height + depth * depth
+done
+
+define model_sphere_surface_area(radius)
+    give 12.566370614359172 * radius * radius
+done
+
+define model_sphere_volume(radius)
+    give 4.1887902047863905 * radius * radius * radius
+done
+
+define model_cylinder_volume(radius, height)
+    give 3.141592653589793 * radius * radius * height
+done
+
+define model_cylinder_lateral_area(radius, height)
+    give 6.283185307179586 * radius * height
+done
+
+define model_cylinder_surface_area(radius, height)
+    give 6.283185307179586 * radius * (radius + height)
+done
+
+define model_cone_volume(radius, height)
+    give 1.0471975511965976 * radius * radius * height
+done
+
+define model_cone_lateral_area(radius, slant_height)
+    give 3.141592653589793 * radius * slant_height
+done
+
+define model_cone_surface_area(radius, slant_height)
+    give 3.141592653589793 * radius * (radius + slant_height)
+done
+
+define model_torus_surface_area(major_radius, minor_radius)
+    give 39.47841760435743 * major_radius * minor_radius
+done
+
+define model_torus_volume(major_radius, minor_radius)
+    give 19.739208802178716 * major_radius * minor_radius * minor_radius
+done
+
+define model_pyramid_volume(base_area, height)
+    give base_area * height / 3
+done
+
+define model_prism_volume(base_area, depth)
+    give base_area * depth
+done

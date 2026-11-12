@@ -1,0 +1,13 @@
+!#inclib %stdhtml/elements.hly%
+
+define html_page_start(title)
+    give "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>" + title + "</title>\n</head>\n<body>\n"
+done
+
+define html_page_end()
+    give "\n</body>\n</html>\n"
+done
+
+define html_page(title, body)
+    give html_page_start(title) + body + html_page_end()
+done

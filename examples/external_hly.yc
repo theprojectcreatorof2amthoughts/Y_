@@ -1,0 +1,8 @@
+## Load a Header Library Y file directly from disk.
+## Unlike !#inclib, this does not require the module to be embedded at build time.
+
+!#libinc "stdlib/math.hly"
+
+stash bounded = math_clamp(125, 0, 100)
+writescrn >^ "Bounded value: " .. tostring(bounded)
+writescrn >^ "Hypotenuse: " .. tostring(hypot(3, 4))

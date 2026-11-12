@@ -1,0 +1,32 @@
+## Y_ original vocabulary with the new operators and built-ins.
+
+stash radius = 5
+stash area = 3.141592653589793 * radius ** 2
+writescrn >^ "Circle area: " .. tostring(area)
+writescrn >^ "Radius type: " .. type(radius)
+writescrn >^ "Rounded area: " .. tostring(round(area))
+
+define classify(score)
+    when score >= 90 doit
+        give "excellent"
+    else
+        give "keep practicing"
+    done
+done
+
+writescrn >^ classify(95)
+
+stash counter = 3
+repeatwhile counter > 0 execute
+    writescrn >^ "count = " .. tostring(counter)
+    counter = counter - 1
+done
+
+writescrn >^ "Floor division: " .. tostring(17 // 5)
+writescrn >^ "Square root: " .. tostring(sqrt(81))
+writescrn >^ "String length: " .. tostring(length("Y_ language"))
+writescrn >^ "Uppercase: " .. upper("y_language")
+writescrn >^ "Contains: " .. tostring(contains("modeling library", "library"))
+writescrn >^ "Clamp: " .. tostring(clamp(12, 0, 10))
+writescrn >^ "Lerp: " .. tostring(lerp(0, 10, 0.25))
+writescrn >^ "Is number: " .. tostring(isnumber(radius))

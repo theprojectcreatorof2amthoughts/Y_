@@ -1,0 +1,19 @@
+define html_link(content, url)
+    give "<a href=\"" + url + "\">" + content + "</a>"
+done
+
+define html_image(source, alt_text)
+    give "<img src=\"" + source + "\" alt=\"" + alt_text + "\">"
+done
+
+define html_button(content, button_type)
+    give "<button type=\"" + button_type + "\">" + content + "</button>"
+done
+
+define html_css_link(path)
+    give "<link rel=\"stylesheet\" href=\"" + path + "\">"
+done
+
+define html_script_link(path)
+    give "<script src=\"" + path + "\"></script>"
+done
