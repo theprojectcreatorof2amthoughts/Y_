@@ -11,7 +11,7 @@
 #include "embedded_libraries.h"
 #include "y_.h"
 
-#define Y_VERSION "0.3.0"
+#define Y_VERSION "0.4.0"
 
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
