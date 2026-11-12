@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +11,7 @@
 #include "embedded_libraries.h"
 #include "y_.h"
 
-#define Y_VERSION "0.2.0"
+#define Y_VERSION "0.3.0"
 
 typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
@@ -524,7 +525,7 @@ static Value call_function(Expr *expr, Env *env) {
     bool builtin = false;
     if (expr->as.call.callee->kind == E_VARIABLE) {
         const char *name = expr->as.call.callee->as.name;
-        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
+        builtin = strcmp(name, "memread") == 0 || strcmp(name, "memwrite") == 0 || strcmp(name, "tostring") == 0 || strcmp(name, "input") == 0 || strcmp(name, "type") == 0 || strcmp(name, "tonumber") == 0 || strcmp(name, "length") == 0 || strcmp(name, "abs") == 0 || strcmp(name, "sqrt") == 0 || strcmp(name, "floor") == 0 || strcmp(name, "ceil") == 0 || strcmp(name, "round") == 0 || strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0 || strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 || strcmp(name, "tan") == 0 || strcmp(name, "log") == 0 || strcmp(name, "exp") == 0 || strcmp(name, "sign") == 0 || strcmp(name, "isnumber") == 0 || strcmp(name, "isstring") == 0 || strcmp(name, "isboolean") == 0 || strcmp(name, "isvoid") == 0 || strcmp(name, "upper") == 0 || strcmp(name, "lower") == 0 || strcmp(name, "contains") == 0 || strcmp(name, "startswith") == 0 || strcmp(name, "endswith") == 0 || strcmp(name, "substring") == 0 || strcmp(name, "replace") == 0 || strcmp(name, "repeat") == 0 || strcmp(name, "reverse") == 0 || strcmp(name, "charat") == 0 || strcmp(name, "isfinite") == 0 || strcmp(name, "isnan") == 0 || strcmp(name, "hypot") == 0 || strcmp(name, "atan2") == 0 || strcmp(name, "radians") == 0 || strcmp(name, "degrees") == 0 || strcmp(name, "sum") == 0 || strcmp(name, "average") == 0 || strcmp(name, "clamp") == 0 || strcmp(name, "lerp") == 0;
     }
     Value callee = builtin ? nil_value() : evaluate(expr->as.call.callee, env);
     Value *args = expr->as.call.count ? calloc(expr->as.call.count, sizeof(Value)) : NULL;
