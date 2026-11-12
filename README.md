@@ -12,6 +12,8 @@ make
 
 Run `./y_` without a file to start the interactive prompt. No third-party libraries are required.
 
+The initial `gyy` bootstrap driver accepts textual LLVM IR (`.ll`) and uses Clang to produce native executables. The Y_ source frontend is not yet implemented; see [compiler/README.md](compiler/README.md).
+
 ## Language
 
 ```lua
