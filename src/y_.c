@@ -758,6 +758,18 @@ static Value call_function(Expr *expr, Env *env) {
             else if (strcmp(name, "sign") == 0) result_number = (x > 0) - (x < 0);
             if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
             else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "hypot") == 0 || strcmp(name, "atan2") == 0) && expr->as.call.count == 2) {
+            double x, y;
+            if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "hypot") == 0 ? hypot(x, y) : atan2(x, y);
+            if (!isfinite(result_number)) report_error(expr->line, "math function produced a non-finite result");
+            else { Value result = { .kind = V_NUMBER, .as.number = result_number }; free(args); return result; }
+        } else if ((strcmp(name, "radians") == 0 || strcmp(name, "degrees") == 0) && expr->as.call.count == 1) {
+            double angle;
+            if (!number_value(args[0], &angle, expr->line)) { free(args); return nil_value(); }
+            double result_number = strcmp(name, "radians") == 0 ? angle * (3.14159265358979323846 / 180.0) : angle * (180.0 / 3.14159265358979323846);
+            Value result = { .kind = V_NUMBER, .as.number = result_number };
+            free(args); return result;
         } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
             double x, y;
             if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
