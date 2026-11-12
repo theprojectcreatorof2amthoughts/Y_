@@ -571,10 +571,126 @@ static Value call_function(Expr *expr, Env *env) {
                 Value result = { .kind = V_STRING, .as.string = converted };
                 free(args); return result;
             }
-        } else if (strcmp(name, "contains") == 0 && expr->as.call.count == 2) {
-            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "contains expects two strings");
+        } else if ((strcmp(name, "contains") == 0 || strcmp(name, "startswith") == 0 || strcmp(name, "endswith") == 0) && expr->as.call.count == 2) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING) report_error(expr->line, "string predicates expect two strings");
             else {
-                Value result = { .kind = V_BOOL, .as.boolean = strstr(args[0].as.string, args[1].as.string) != NULL };
+                const char *source = args[0].as.string, *part = args[1].as.string;
+                size_t source_length = strlen(source), part_length = strlen(part);
+                bool matches = strcmp(name, "contains") == 0 ? strstr(source, part) != NULL :
+                               strcmp(name, "startswith") == 0 ? part_length <= source_length && strncmp(source, part, part_length) == 0 :
+                               part_length <= source_length && strcmp(source + source_length - part_length, part) == 0;
+                Value result = { .kind = V_BOOL, .as.boolean = matches };
+                free(args); return result;
+            }
+        } else if (strcmp(name, "substring") == 0 && (expr->as.call.count == 2 || expr->as.call.count == 3)) {
+            double start_number, count_number = -1;
+            if (args[0].kind != V_STRING || !number_value(args[1], &start_number, expr->line) ||
+                (expr->as.call.count == 3 && !number_value(args[2], &count_number, expr->line))) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "substring expects a string and numeric indexes");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(start_number) != start_number || start_number < -(double)source_length || start_number > (double)source_length ||
+                    (expr->as.call.count == 3 && (floor(count_number) != count_number || count_number < 0))) {
+                    report_error(expr->line, "substring indexes must be whole numbers within the string");
+                } else {
+                    long start = (long)start_number;
+                    if (start < 0) start += (long)source_length;
+                    size_t available = source_length - (size_t)start;
+                    size_t count = expr->as.call.count == 3 && count_number < (double)available ? (size_t)count_number : available;
+                    Value result = { .kind = V_STRING, .as.string = copy_range(args[0].as.string + start, count) };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "charat") == 0 && expr->as.call.count == 2) {
+            double index_number;
+            if (args[0].kind != V_STRING || !number_value(args[1], &index_number, expr->line)) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "charat expects a string and an index");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(index_number) != index_number || index_number < -(double)source_length || index_number >= (double)source_length) report_error(expr->line, "charat index is outside the string");
+                else {
+                    long index = (long)index_number;
+                    if (index < 0) index += (long)source_length;
+                    Value result = { .kind = V_STRING, .as.string = copy_range(args[0].as.string + index, 1) };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "replace") == 0 && expr->as.call.count == 3) {
+            if (args[0].kind != V_STRING || args[1].kind != V_STRING || args[2].kind != V_STRING) report_error(expr->line, "replace expects three strings");
+            else {
+                const char *source = args[0].as.string, *needle = args[1].as.string, *replacement = args[2].as.string;
+                size_t source_length = strlen(source), needle_length = strlen(needle), replacement_length = strlen(replacement), occurrences = 0;
+                if (needle_length == 0) report_error(expr->line, "replace search text cannot be empty");
+                else {
+                    for (const char *scan = source; (scan = strstr(scan, needle)) != NULL; scan += needle_length) ++occurrences;
+                    size_t output_length = source_length;
+                    if (replacement_length >= needle_length) {
+                        size_t growth = replacement_length - needle_length;
+                        if (growth && occurrences > (16777216u - source_length) / growth) output_length = 16777217u;
+                        else output_length += occurrences * growth;
+                    } else output_length -= occurrences * (needle_length - replacement_length);
+                    if (output_length > 16777216u) report_error(expr->line, "replace result exceeds 16 MiB");
+                    else {
+                        char *output = malloc(output_length + 1);
+                        if (!output) { fputs("out of memory\n", stderr); exit(2); }
+                        const char *scan = source;
+                        char *write = output;
+                        const char *match;
+                        while ((match = strstr(scan, needle)) != NULL) {
+                            size_t prefix = (size_t)(match - scan);
+                            memcpy(write, scan, prefix); write += prefix;
+                            memcpy(write, replacement, replacement_length); write += replacement_length;
+                            scan = match + needle_length;
+                        }
+                        size_t tail = strlen(scan); memcpy(write, scan, tail); write += tail; *write = '\0';
+                        Value result = { .kind = V_STRING, .as.string = output };
+                        free(args); return result;
+                    }
+                }
+            }
+        } else if (strcmp(name, "repeat") == 0 && expr->as.call.count == 2) {
+            double count_number;
+            if (args[0].kind != V_STRING || !number_value(args[1], &count_number, expr->line)) {
+                if (args[0].kind != V_STRING) report_error(expr->line, "repeat expects a string and a count");
+            } else {
+                size_t source_length = strlen(args[0].as.string);
+                if (floor(count_number) != count_number || count_number < 0 || count_number > 1000000 ||
+                    (source_length && count_number > 16777216.0 / (double)source_length)) report_error(expr->line, "repeat count or result size is out of range");
+                else {
+                    size_t count = (size_t)count_number, output_length = source_length * count;
+                    char *output = malloc(output_length + 1);
+                    if (!output) { fputs("out of memory\n", stderr); exit(2); }
+                    for (size_t i = 0; i < count; ++i) memcpy(output + i * source_length, args[0].as.string, source_length);
+                    output[output_length] = '\0';
+                    Value result = { .kind = V_STRING, .as.string = output };
+                    free(args); return result;
+                }
+            }
+        } else if (strcmp(name, "reverse") == 0 && expr->as.call.count == 1) {
+            if (args[0].kind != V_STRING) report_error(expr->line, "reverse expects a string");
+            else {
+                size_t n = strlen(args[0].as.string);
+                char *output = copy_range(args[0].as.string, n);
+                for (size_t i = 0; i < n / 2; ++i) { char swap = output[i]; output[i] = output[n - i - 1]; output[n - i - 1] = swap; }
+                Value result = { .kind = V_STRING, .as.string = output };
+                free(args); return result;
+            }
+        } else if ((strcmp(name, "isfinite") == 0 || strcmp(name, "isnan") == 0) && expr->as.call.count == 1) {
+            if (args[0].kind != V_NUMBER) report_error(expr->line, "isfinite/isnan expects a number");
+            else {
+                Value result = { .kind = V_BOOL, .as.boolean = strcmp(name, "isfinite") == 0 ? isfinite(args[0].as.number) : isnan(args[0].as.number) };
+                free(args); return result;
+            }
+        } else if ((strcmp(name, "sum") == 0 || strcmp(name, "average") == 0) && expr->as.call.count > 0) {
+            double total = 0;
+            for (size_t i = 0; i < expr->as.call.count; ++i) {
+                double number;
+                if (!number_value(args[i], &number, expr->line)) { free(args); return nil_value(); }
+                total += number;
+            }
+            if (!isfinite(total)) report_error(expr->line, "sum/average produced a non-finite result");
+            else {
+                Value result = { .kind = V_NUMBER, .as.number = strcmp(name, "average") == 0 ? total / (double)expr->as.call.count : total };
                 free(args); return result;
             }
         } else if (strcmp(name, "clamp") == 0 && expr->as.call.count == 3) {
