@@ -36,7 +36,7 @@ writescrn >^ memread(!$scratch, 0)
 
 `writescrn >^ expression` prints a value to standard output; `errstate <^ expression` prints a diagnostic to standard error. `!$name` reads a custom variable and `!$name = expression` assigns it. Use `!${name-with-symbols}` for custom variable names containing punctuation or spaces. `memdesig !$name, size` allocates a zeroed byte buffer; `memread(buffer, index)` and `memwrite(buffer, index, byte)` access it. Indices are zero-based.
 
-`!#inclib %stdlib/math.hly%` and similar paths import `.hly` Header Library Y files embedded in the executable at build time. `!#libinc "path.yc"` loads an external `.yc` source file. `!#adeq "path.yaq"` loads an external Adequit into the current program environment; an Adequit can import `.hly` libraries, calculate values, and define procedures for the `.yc` program to use. Adequits execute in the caller's environment, so their procedures and variables are available after the import. `!#inptype("prompt")` displays the prompt, reads one line from standard input, and returns the entered text as a string; use `!#inptype("")` for input without a prompt. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
+`!#inclib %stdlib/math.hly%` and similar paths import `.hly` Header Library Y files embedded in the executable at build time. `!#libinc "path.yc"` loads an external `.yc` source file. `!#adeq "path.yaq"` loads an external Adequit into the current program environment; an Adequit can import `.hly` libraries, calculate values, and define procedures for the `.yc` program to use. Adequits execute in the caller's environment, so their procedures and variables are available after the import. Example: `./y_ examples/adequit_demo.yc` runs a short program that imports `examples/quicktools.yaq`; that Adequit loads `stdlib/math.hly` and exposes reusable procedures. `.yaq` files are executable Adequits, while `.hly` means Header Library Y.\n\n`!#inptype("prompt")` displays the prompt, reads one line from standard input, and returns the entered text as a string; use `!#inptype("")` for input without a prompt. Comments start with `##`. Y_ uses `stash` for variables, `define` for procedures, `give` for returned values, `when` / `doit` / `else` / `done` for branches, and `repeatwhile` / `execute` / `done` for loops. Boolean values are `yes` and `no`, the empty value is `void`, and boolean operators are `both`, `either`, and `invert`. `name define = yes` checks whether a variable name is bound, independently of its value.
 
 ## HTML with Y_
 
@@ -55,11 +55,11 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `src/y_.c` contains the lexer, parser, and interpreter; `src/y_.h` exposes the CLI entry point.
 - `src/memory.c` / `src/memory.h` implement checked byte-buffer operations.
 - `src/file_io.c` / `src/file_io.h` provide source-file loading for scripts and imports.
-- `stdlib/` contains reusable Y_ source libraries.
+- `stdlib/`, `stdint/`, `stdmodel/`, and `stdhtml/` contain reusable `.hly` Header Library Y modules.
 - `stdint/` contains integer libraries that define easier expressions
 - `stdmodel/` contains model libraries for software or code that focuses on models.
 - `stdhtml/` contains HTML-generation libraries, a demo script, and their HTML reference page.
-- `examples/` contains complete scripts.
+- `examples/` contains `.yc` programs and `.yaq` Adequits.
 - `docs/` describes the syntax and internal architecture.
 
 New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, substring and replacement tools, string repetition and reversal, variadic aggregation, angle conversion, geometry math, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
