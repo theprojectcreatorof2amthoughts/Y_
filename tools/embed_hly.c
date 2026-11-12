@@ -15,8 +15,8 @@ static char *library_name(const char *path) {
     const char *base = strrchr(path, '/');
     base = base ? base + 1 : path;
     size_t length = strlen(base);
-    if (length <= 3 || strcmp(base + length - 3, ".hly") != 0) return NULL;
-    length -= 3;
+    if (length <= 4 || strcmp(base + length - 4, ".hly") != 0) return NULL;
+    length -= 4;
     if (!is_identifier_start((unsigned char)base[0])) return NULL;
     for (size_t i = 1; i < length; ++i)
         if (!is_identifier_char((unsigned char)base[i])) return NULL;
