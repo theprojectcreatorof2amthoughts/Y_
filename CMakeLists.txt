@@ -52,6 +52,9 @@ if(NOT WIN32)
     target_link_libraries(y_ PRIVATE m)
 endif()
 
+add_executable(gyy compiler/gyy.c)
+target_compile_options(gyy PRIVATE -Wall -Wextra -Wpedantic)
+
 install(TARGETS y_ gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 set(CPACK_PACKAGE_NAME "y-language")
