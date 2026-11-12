@@ -1,0 +1,71 @@
+define html_tag(tag, content)
+    give "<" + tag + ">" + content + "</" + tag + ">"
+done
+
+define html_void_tag(tag)
+    give "<" + tag + ">"
+done
+
+define html_h1(content)
+    give html_tag("h1", content)
+done
+
+define html_h2(content)
+    give html_tag("h2", content)
+done
+
+define html_h3(content)
+    give html_tag("h3", content)
+done
+
+define html_p(content)
+    give html_tag("p", content)
+done
+
+define html_div(content)
+    give html_tag("div", content)
+done
+
+define html_section(content)
+    give html_tag("section", content)
+done
+
+define html_main(content)
+    give html_tag("main", content)
+done
+
+define html_header(content)
+    give html_tag("header", content)
+done
+
+define html_footer(content)
+    give html_tag("footer", content)
+done
+
+define html_strong(content)
+    give html_tag("strong", content)
+done
+
+define html_em(content)
+    give html_tag("em", content)
+done
+
+define html_code(content)
+    give html_tag("code", content)
+done
+
+define html_pre(content)
+    give html_tag("pre", content)
+done
+
+define html_list_item(content)
+    give html_tag("li", content)
+done
+
+define html_break()
+    give html_void_tag("br")
+done
+
+define html_rule()
+    give html_void_tag("hr")
+done
