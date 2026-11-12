@@ -44,7 +44,7 @@ Additional operators:
 - `//` performs floor division.
 - `..` concatenates two strings.
 
-`+` continues to concatenate two strings as well. Only `void` and `no` are falsey.
+`+` continues to concatenate two strings as well. Only `void` and `no` are falsey. String positions and lengths are byte-based and zero-indexed; `substring` and `charat` accept negative positions counted from the end. `replace` replaces every non-overlapping match, and `repeat` is limited to a 16 MiB result.
 
 ## Built-in functions
 
@@ -53,7 +53,10 @@ Additional operators:
 - `tonumber(value)` converts a numeric string to a number and reports invalid input.
 - Math: `abs`, `sqrt`, `floor`, `ceil`, `round`, `pow`, `min`, `max`, `sin`, `cos`, `tan`, `log`, and `exp`. Trigonometric functions use radians.
 - Predicates: `isnumber`, `isstring`, `isboolean`, and `isvoid` return booleans.
-- Strings: `upper`, `lower`, and `contains` (substring search).
+- Strings: `upper`, `lower`, `contains`, `startswith`, `endswith`, `substring`, `charat`, `replace`, `repeat`, and `reverse`.
+- Numeric aggregation: `sum(value, ...)` and `average(value, ...)` accept one or more numbers.
+- Numeric checks: `isfinite(value)` and `isnan(value)` inspect numeric values.
+- Geometry and angles: `hypot(x, y)`, `atan2(y, x)` (radians), `radians(degrees)`, and `degrees(radians)`.
 - Numeric helpers: `sign`, `clamp(value, low, high)`, and `lerp(from, to, amount)` (unclamped interpolation).
 
 `name define = yes` checks whether a variable has been defined, even if its value is `void`; use `no` to check that it has not been defined. This operator does not evaluate the variable's value.
@@ -86,4 +89,4 @@ The prompt must be a quoted string. End-of-file before any characters are read r
 
 Run `./y_` with no arguments to evaluate one-line snippets in a persistent environment. Run `./y_ path/to/script.yc` to execute a source file.
 
-Y_ keeps its own vocabulary. It does not use conventional `print`, `let`, `if`, `while`, or `return` keywords. Tables, coroutines, modules, and bytecode compilation are not currently supported.
+Y_ keeps its own vocabulary. It does not use conventional `print`, `let`, `if`, `while`, or `return` keywords. Tables, coroutines, and bytecode compilation are not currently supported.
