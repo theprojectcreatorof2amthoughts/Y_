@@ -17,7 +17,7 @@ typedef enum {
     T_EOF, T_NAME, T_CUSTOM, T_NUMBER, T_STRING, T_LPAREN, T_RPAREN,
     T_COMMA, T_SEMI, T_PLUS, T_MINUS, T_STAR, T_SLASH, T_PERCENT,
     T_ASSIGN, T_EQ, T_NE, T_LT, T_LE, T_GT, T_GE, T_POWER, T_IDIV, T_CONCAT, T_OUTPUT, T_ERROR_OUTPUT,
-    T_LIBINC, T_EMBEDDED_LIBRARY
+    T_LIBINC, T_EMBEDDED_LIBRARY, T_ADEQUIT
 } TokenKind;
 
 typedef struct { TokenKind kind; char *text; double number; int line; } Token;
@@ -50,7 +50,7 @@ struct Expr {
 };
 
 typedef enum { S_LOCAL, S_ASSIGN, S_EXPR, S_OUTPUT, S_ERROR_OUTPUT, S_MEMORY, S_INCLUDE,
-               S_EMBEDDED_INCLUDE,
+               S_EMBEDDED_INCLUDE, S_ADEQUIT,
                S_FUNCTION, S_RETURN, S_IF, S_WHILE, S_BREAK } StmtKind;
 struct Stmt {
     StmtKind kind;
@@ -166,17 +166,30 @@ static void tokenize(Parser *parser, const char *source) {
                 add_token(parser, token);
                 continue;
             }
+            if (directive_length == 4 && strncmp(start, "adeq", 4) == 0) {
+                while (*cursor == ' ' || *cursor == '\t') ++cursor;
+                if (*cursor != '"') { report_error(line, "expected a quoted .yaq path after !#adeq"); break; }
+                ++cursor;
+                const char *path_start = cursor;
+                while (*cursor && *cursor != '"' && *cursor != '\n') ++cursor;
+                if (*cursor != '"' || cursor == path_start) { report_error(line, "expected a non-empty .yaq path"); break; }
+                token.kind = T_ADEQUIT;
+                token.text = copy_range(path_start, (size_t)(cursor - path_start));
+                ++cursor;
+                add_token(parser, token);
+                continue;
+            }
             if (directive_length != 6 || strncmp(start, "inclib", 6) != 0) {
-                report_error(line, "unknown directive; expected !#libinc or !#inclib");
+                report_error(line, "unknown directive; expected !#libinc, !#adeq, or !#inclib");
                 break;
             }
             while (*cursor == ' ' || *cursor == '\t') ++cursor;
-            if (*cursor != '%') { report_error(line, "expected '%' before embedded .yl library path"); break; }
+            if (*cursor != '%') { report_error(line, "expected '%' before embedded .hly library path"); break; }
             ++cursor;
             const char *path_start = cursor;
             while (*cursor && *cursor != '%' && *cursor != '\n') ++cursor;
             if (*cursor != '%' || cursor == path_start) {
-                report_error(line, "expected a non-empty .yl path between '%' markers");
+                report_error(line, "expected a non-empty .hly path between '%' markers");
                 break;
             }
             token.kind = T_EMBEDDED_LIBRARY;
@@ -432,6 +445,11 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         } else if (match(p, T_EMBEDDED_LIBRARY)) {
             stmt = new_stmt(S_EMBEDDED_INCLUDE, start.line);
             stmt->as.embedded_library = previous(p)->text;
+        } else if (match(p, T_ADEQUIT)) {
+            stmt = new_stmt(S_ADEQUIT, start.line);
+            stmt->as.expression = new_expr(E_VALUE, start.line);
+            stmt->as.expression->as.value.kind = V_STRING;
+            stmt->as.expression->as.value.as.string = previous(p)->text;
         } else if (peek(p)->kind == T_CUSTOM || peek(p)->kind == T_NAME) {
             Token name = *peek(p); ++p->at;
             if (match(p, T_ASSIGN)) {
@@ -932,11 +950,11 @@ static Result execute(Stmt *stmt, Env *env) {
             const char *filename = strrchr(path, '/');
             filename = filename ? filename + 1 : path;
             size_t filename_length = strlen(filename);
-            if (filename_length <= 3 || strcmp(filename + filename_length - 3, ".yl") != 0) {
-                report_error(stmt->line, "embedded imports must name a .yl file");
+            if (filename_length <= 4 || strcmp(filename + filename_length - 4, ".hly") != 0) {
+                report_error(stmt->line, "embedded imports must name a .hly file");
                 break;
             }
-            char *library_name = copy_range(filename, filename_length - 3);
+            char *library_name = copy_range(filename, filename_length - 4);
             const char *source = y_embedded_library(library_name);
             if (!source) {
                 char message[256];
@@ -947,6 +965,19 @@ static Result execute(Stmt *stmt, Env *env) {
             }
             run_source(source, library_name, env);
             free(library_name);
+            break;
+        }
+        case S_ADEQUIT: {
+            Value path = evaluate(stmt->as.expression, env);
+            if (path.kind != V_STRING) { report_error(stmt->line, "!#adeq expects a quoted .yaq path"); break; }
+            size_t path_length = strlen(path.as.string);
+            if (path_length <= 4 || strcmp(path.as.string + path_length - 4, ".yaq") != 0) {
+                report_error(stmt->line, "Adequit imports must name a .yaq file");
+                break;
+            }
+            char *source = read_entire_file(path.as.string, NULL);
+            if (source) { run_source(source, path.as.string, env); free(source); }
+            else failed = true;
             break;
         }
         case S_FUNCTION: {
@@ -981,7 +1012,13 @@ static Result execute_list(Stmt *stmt, Env *env) {
     return (Result){0};
 }
 
+static unsigned source_depth;
 static bool run_source(const char *source, const char *path, Env *env) {
+    if (source_depth >= 64) {
+        report_error(1, "source import depth limit exceeded");
+        return false;
+    }
+    ++source_depth;
     const char *old_path = active_path; active_path = path;
     Parser parser = { .path = path };
     tokenize(&parser, source);
@@ -989,6 +1026,7 @@ static bool run_source(const char *source, const char *path, Env *env) {
     if (!failed && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
     if (!failed) execute_list(program, env);
     active_path = old_path;
+    --source_depth;
     return !failed;
 }
 
