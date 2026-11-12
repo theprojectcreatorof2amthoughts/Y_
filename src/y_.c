@@ -939,7 +939,12 @@ static Result execute(Stmt *stmt, Env *env) {
         }
         case S_INCLUDE: {
             Value path = evaluate(stmt->as.expression, env);
-            if (path.kind != V_STRING) { report_error(stmt->line, "!#libinc expects a quoted path"); break; }
+            if (path.kind != V_STRING) { report_error(stmt->line, "!#libinc expects a quoted .hly path"); break; }
+            size_t path_length = strlen(path.as.string);
+            if (path_length <= 4 || strcmp(path.as.string + path_length - 4, ".hly") != 0) {
+                report_error(stmt->line, "!#libinc imports must name a .hly Header Library Y file");
+                break;
+            }
             char *source = read_entire_file(path.as.string, NULL);
             if (source) { run_source(source, path.as.string, env); free(source); }
             else failed = true;
