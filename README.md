@@ -1,6 +1,6 @@
 # Y_
 
-Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary and adds richer operators, numeric and string conversion helpers, and expanded math built-ins.
+Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary and adds richer operators, extended string processing, numeric and geometry helpers, and expanded math built-ins.
 
 ## Build and run
 
@@ -62,6 +62,6 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 - `examples/` contains complete scripts.
 - `docs/` describes the syntax and internal architecture.
 
-New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, string helpers, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
+New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, substring and replacement tools, string repetition and reversal, variadic aggregation, angle conversion, geometry math, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
 
 Start with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
