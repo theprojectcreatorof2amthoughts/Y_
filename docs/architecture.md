@@ -23,4 +23,4 @@ The interpreter currently favors a small dependency-free implementation over byt
 
 ## Build and checks
 
-`make` builds the executable with a C11 compiler. No external runtime libraries are required beyond the C math library.
+`make` builds the executable with a C11 compiler. Both Make and CMake discover `.hly` files and embed them into the executable; `.yaq` Adequits are loaded from disk at runtime. No external runtime libraries are required beyond the C math library.
