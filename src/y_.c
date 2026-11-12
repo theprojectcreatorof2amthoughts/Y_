@@ -621,6 +621,7 @@ static Value call_function(Expr *expr, Env *env) {
                 const char *source = args[0].as.string, *needle = args[1].as.string, *replacement = args[2].as.string;
                 size_t source_length = strlen(source), needle_length = strlen(needle), replacement_length = strlen(replacement), occurrences = 0;
                 if (needle_length == 0) report_error(expr->line, "replace search text cannot be empty");
+                else if (source_length > 16777216u) report_error(expr->line, "replace source exceeds 16 MiB");
                 else {
                     for (const char *scan = source; (scan = strstr(scan, needle)) != NULL; scan += needle_length) ++occurrences;
                     size_t output_length = source_length;
@@ -768,8 +769,11 @@ static Value call_function(Expr *expr, Env *env) {
             double angle;
             if (!number_value(args[0], &angle, expr->line)) { free(args); return nil_value(); }
             double result_number = strcmp(name, "radians") == 0 ? angle * (3.14159265358979323846 / 180.0) : angle * (180.0 / 3.14159265358979323846);
+            if (!isfinite(result_number)) report_error(expr->line, "angle conversion produced a non-finite result");
+            else {
             Value result = { .kind = V_NUMBER, .as.number = result_number };
             free(args); return result;
+            }
         } else if ((strcmp(name, "pow") == 0 || strcmp(name, "min") == 0 || strcmp(name, "max") == 0) && expr->as.call.count == 2) {
             double x, y;
             if (!number_value(args[0], &x, expr->line) || !number_value(args[1], &y, expr->line)) { free(args); return nil_value(); }
