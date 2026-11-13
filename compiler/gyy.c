@@ -26,7 +26,7 @@
 #define DEFAULT_COMPILER "clang"
 
 static void usage(FILE *f) {
-    fputs("gyy - Y_ native compiler (Clang backend)\n"
+    fputs(DRIVER_NAME " - native compiler (Clang backend)\n"
           "Usage: " DRIVER_NAME " <main.yc> [module.yc|module.hly|module.yaq ...] [options]\n"
           "       " DRIVER_NAME " <input.ll> [-o output] [-O0|-O1|-O2|-O3]\n"
           "Options: -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
@@ -149,15 +149,15 @@ int main(int argc,char**argv) {
     for(int i=1;i<argc;++i) {
         if(!strcmp(argv[i],"--help")||!strcmp(argv[i],"-h")){usage(stdout);return 0;}
         if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
-        if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
-        else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
+        if(!strcmp(argv[i],"-o")){if(++i>=argc){fprintf(stderr,"%s: error: missing filename after -o\n",DRIVER_NAME);return 2;}outarg=argv[i];}
+        else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fprintf(stderr,"%s: error: missing compiler path after %s\n",DRIVER_NAME,COMPILER_OPTION);return 2;}clang=argv[i];}
         else if(!strncmp(argv[i],"-O",2)){if(strcmp(argv[i],"-O0")&&strcmp(argv[i],"-O1")&&strcmp(argv[i],"-O2")&&strcmp(argv[i],"-O3")){fprintf(stderr,"gyy: error: invalid optimization option '%s'\n",argv[i]);return 2;}opt=argv[i];}
         else if(!strcmp(argv[i],"-g"))debug=1;
         else if(!strcmp(argv[i],"-Wall")||!strcmp(argv[i],"-Wextra")||!strcmp(argv[i],"-Wpedantic")||!strcmp(argv[i],"-Werror")||!strncmp(argv[i],"-Wno-",5)||!strncmp(argv[i],"-Werror=",8)) {
             if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\n",stderr);return 2;}
             warnings[warning_count++]=argv[i];
         }
-        else if(argv[i][0]=='-'){fprintf(stderr,"gyy: error: unrecognized command-line option '%s'\n",argv[i]);return 2;}
+        else if(argv[i][0]=='-'){fprintf(stderr,"%s: error: unrecognized command-line option '%s'\n",DRIVER_NAME,argv[i]);return 2;}
         else {
             if(count==MAX_INPUTS){fputs("gyy: error: too many input files\n",stderr);return 2;}
             if(!has_extension(argv[i],".yc")&&!has_extension(argv[i],".hly")&&!has_extension(argv[i],".yaq")&&!has_extension(argv[i],".ll")) {
