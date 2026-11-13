@@ -144,6 +144,13 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
         for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".yc")){if(main_count==0)entry=i;++main_count;}
         if(main_count==0){fputs("gyy: error: expected at least one .yc entry file\n",stderr);return 2;}
         for(size_t i=0;i<count;++i){sources[i]=read_source(inputs[i]);if(!sources[i])goto fail;}
+        const char *source_paths[MAX_INPUTS];
+        for(size_t i=0;i<count;++i) source_paths[i]=inputs[i];
+        int diagnostics=y_program_check_sources((const char *const *)sources,source_paths,count,entry);
+        if(diagnostics!=0) {
+            for(size_t i=0;i<count;++i) free(sources[i]);
+            return diagnostics;
+        }
     }
     char *wrapper=NULL;
     if(!is_ir) {
