@@ -61,17 +61,7 @@ target_compile_definitions(gyy PRIVATE
 )
 target_compile_options(gyy PRIVATE -Wall -Wextra -Wpedantic)
 
-add_executable(gypp compiler/gyy.c)
-set_target_properties(gypp PROPERTIES OUTPUT_NAME "gy++")
-add_dependencies(gypp gyy_runtime_assets)
-target_compile_definitions(gypp PRIVATE
-    GYPP_DRIVER=1
-    GY_Y_PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
-    GY_Y_EMBEDDED_SOURCE="${EMBEDDED_SOURCE}"
-)
-target_compile_options(gypp PRIVATE -Wall -Wextra -Wpedantic)
-
-install(TARGETS ylang gyy gypp RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(TARGETS ylang gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 set(CPACK_PACKAGE_NAME "y-language")
 set(CPACK_PACKAGE_VENDOR "Y_ Project")
