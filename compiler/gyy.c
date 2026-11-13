@@ -131,12 +131,11 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
     size_t entry=0;
     if(!is_ir) {
         size_t main_count=0;
-        for(size_t i=0;i<count;++i)
-            if(has_extension(inputs[i],ENTRY_EXTENSION) ||
-               (!strcmp(ENTRY_EXTENSION,".yxx") && has_extension(inputs[i],".yc"))) {
-                if(main_count==0)entry=i;
-                ++main_count;
-            }
+#ifdef GYXX_DRIVER
+        for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".yxx")) {entry=i;++main_count;break;}
+#else
+        for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".yc")) {entry=i;++main_count;break;}
+#endif
         if(main_count==0){fprintf(stderr,"%s: error: expected an entry file with extension %s\n",DRIVER_NAME,ENTRY_EXTENSION);return 2;}
         for(size_t i=0;i<count;++i){sources[i]=read_source(inputs[i]);if(!sources[i])goto fail;}
     }
