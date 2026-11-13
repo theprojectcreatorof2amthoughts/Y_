@@ -125,10 +125,18 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
     args[a++]=(char*)opt;if(debug)args[a++]="-g";
     for(size_t i=0;i<warning_count;++i)args[a++]=(char*)warnings[i];
     if(!is_ir) {
+#ifdef GYXX_DRIVER
+        args[a++]="-x";args[a++]="c";
+#endif
         args[a++]="-I";args[a++]=inc;
         args[a++]=wrapper;args[a++]=rt;args[a++]=mem;args[a++]=io;
         args[a++]=(char*)GY_Y_EMBEDDED_SOURCE;args[a++]="-lm";
-    } else args[a++]=inputs[0];
+    } else {
+#ifdef GYXX_DRIVER
+        args[a++]="-x";args[a++]="ir";
+#endif
+        args[a++]=inputs[0];
+    }
     args[a++]="-o";args[a++]=(char*)out;args[a]=NULL;
     int result=run(args);
     if(wrapper)remove(wrapper);
