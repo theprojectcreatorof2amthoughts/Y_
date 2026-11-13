@@ -26,7 +26,7 @@ Diagnostics use GCC-style locations, for example
 with source locations and warning option names. Supported options include
 `-Wall`, `-Wextra`, `-Wpedantic`, `-Werror`, `-Wno-WARNING`, and
 `-Werror=WARNING`, plus `-g` and `-O0` through `-O3`. `--clang PATH` or
-the `LLVM_CLANG` environment variable selects Clang.
+the `LLVM_CLANG` environment variable selects Clang. Y_ also provides compiler-native aliases: `--warn-all` enables the full standard warning set, `--warn-extra` enables additional warnings, `--optimize=0` through `--optimize=3` select optimization levels, and `--debug-info` includes debug symbols. These are `gyy` options, separate from `gy++`'s `--xx-*` options.
 
 The current backend packages Y_ source and the existing interpreter/runtime into
 a native executable. It is a native executable build with module bundling, not
