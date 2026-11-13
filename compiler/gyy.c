@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "y_.h"
 #ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
@@ -29,7 +30,7 @@ static void usage(FILE *f) {
     fputs("gyy - Y_ native compiler (Clang backend)\n"
           "Usage: " DRIVER_NAME " <main.yc> [module.yc|module.hly|module.yaq ...] [options]\n"
           "       " DRIVER_NAME " <input.ll> [-o output] [-O0|-O1|-O2|-O3]\n"
-          "Options: -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
+          "Options: --check, -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
           "         --optimize=0..3, --warn-all, --warn-extra, --debug-info,\n"
           "         -Wpedantic, -Werror, -Wno-WARNING, -Werror=WARNING, -g\n"
           "Modules share one environment and are linked into one executable.\n", f);
@@ -98,6 +99,42 @@ static int run(char *const argv[]) {
     return (int)status;
 #endif
 }
+static int check_sources(char **inputs, size_t count) {
+    char *owned[MAX_INPUTS] = {0};
+    const char *sources[MAX_INPUTS];
+    const char *paths[MAX_INPUTS];
+    size_t entry = SIZE_MAX;
+    for (size_t i = 0; i < count; ++i) {
+        if (has_extension(inputs[i], ".ll")) {
+            fprintf(stderr, "gyy: error: --check accepts Y_ source files, not '%s'\\n", inputs[i]);
+            goto fail;
+        }
+        if (!has_extension(inputs[i], ".yc") &&
+            !has_extension(inputs[i], ".hly") &&
+            !has_extension(inputs[i], ".yaq")) {
+            fprintf(stderr, "gyy: error: unsupported source file '%s' for --check\\n", inputs[i]);
+            goto fail;
+        }
+        if (entry == SIZE_MAX && has_extension(inputs[i], ".yc")) entry = i;
+        owned[i] = read_source(inputs[i]);
+        if (!owned[i]) goto fail;
+        sources[i] = owned[i];
+        paths[i] = inputs[i];
+    }
+    if (entry == SIZE_MAX) {
+        fputs("gyy: error: --check requires at least one .yc entry file\\n", stderr);
+        goto fail;
+    }
+    {
+        int result = y_program_check_sources(sources, paths, count, entry);
+        for (size_t i = 0; i < count; ++i) free(owned[i]);
+        return result;
+    }
+fail:
+    for (size_t i = 0; i < count; ++i) free(owned[i]);
+    return 2;
+}
+
 static int compile(const char*clang,const char*out,const char*opt,char **inputs,
                    size_t count,int is_ir,const char **warnings,size_t warning_count,int debug) {
     char *sources[MAX_INPUTS]={0};
@@ -144,11 +181,12 @@ fail:
 }
 int main(int argc,char**argv) {
     const char*clang=getenv(DEFAULT_COMPILER_ENV),*opt="-O0",*outarg=NULL;
-    char *inputs[MAX_INPUTS];size_t count=0;
+    char *inputs[MAX_INPUTS];size_t count=0;int check_only=0;
     const char *warnings[MAX_FLAGS];size_t warning_count=0;int debug=0;
     if(!clang||!*clang)clang=DEFAULT_COMPILER;
     for(int i=1;i<argc;++i) {
         if(!strcmp(argv[i],"--help")||!strcmp(argv[i],"-h")){usage(stdout);return 0;}
+        else if(!strcmp(argv[i],"--check"))check_only=1;
         if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
         if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
         else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
@@ -176,6 +214,7 @@ int main(int argc,char**argv) {
     if(!is_ir) for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".ll")) {
         fprintf(stderr,"gyy: error: cannot mix LLVM IR and Y_ source input '%s'\n",inputs[i]);return 2;
     }
+    if(check_only) return check_sources(inputs, count);
     char *owned=NULL;
     if(!outarg){owned=default_output(inputs[0]);outarg=owned;}
     if(!outarg){fputs("gyy: error: unable to determine output filename\n",stderr);return 2;}
