@@ -547,8 +547,7 @@ static void analyze_statements(Stmt *stmt, Env *scope) {
         switch (s->kind) {
             case S_LOCAL:
                 if (s->as.variable.value) analyze_expression(s->as.variable.value, scope);
-                if (!find_value(scope, s->as.variable.name))
-                    define_value(scope, s->as.variable.name, nil_value());
+                define_value(scope, s->as.variable.name, nil_value());
                 break;
             case S_ASSIGN:
                 analyze_expression(s->as.variable.value, scope);
