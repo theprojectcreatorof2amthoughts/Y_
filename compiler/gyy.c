@@ -19,11 +19,25 @@
 #define MAX_INPUTS 128
 #define MAX_FLAGS 64
 
+#ifdef GYPP_DRIVER
+#define DRIVER_NAME "gy++"
+#define DRIVER_VERSION "gy++ 0.4.0 (Y_ multi-file C++ driver)"
+#define DEFAULT_COMPILER_ENV "LLVM_CLANGXX"
+#define COMPILER_OPTION "--clang++"
+#define DEFAULT_COMPILER "clang++"
+#else
+#define DRIVER_NAME "gyy"
+#define DRIVER_VERSION "gyy 0.4.0 (Y_ multi-file native compiler)"
+#define DEFAULT_COMPILER_ENV "LLVM_CLANG"
+#define COMPILER_OPTION "--clang"
+#define DEFAULT_COMPILER "clang"
+#endif
+
 static void usage(FILE *f) {
     fputs("gyy - Y_ native compiler (Clang backend)\n"
-          "Usage: gyy <main.yc> [module.yc|module.hly|module.yaq ...] [options]\n"
-          "       gyy <input.ll> [-o output] [-O0|-O1|-O2|-O3]\n"
-          "Options: -o FILE, --clang PATH, -O0..-O3, -Wall, -Wextra,\n"
+          "Usage: " DRIVER_NAME " <main.yc> [module.yc|module.hly|module.yaq ...] [options]\n"
+          "       " DRIVER_NAME " <input.ll> [-o output] [-O0|-O1|-O2|-O3]\n"
+          "Options: -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
           "         -Wpedantic, -Werror, -Wno-WARNING, -Werror=WARNING, -g\n"
           "Modules share one environment and are linked into one executable.\n", f);
 }
@@ -135,15 +149,15 @@ fail:
     return 2;
 }
 int main(int argc,char**argv) {
-    const char*clang=getenv("LLVM_CLANG"),*opt="-O0",*outarg=NULL;
+    const char*clang=getenv(DEFAULT_COMPILER_ENV),*opt="-O0",*outarg=NULL;
     char *inputs[MAX_INPUTS];size_t count=0;
     const char *warnings[MAX_FLAGS];size_t warning_count=0;int debug=0;
-    if(!clang||!*clang)clang="clang";
+    if(!clang||!*clang)clang=DEFAULT_COMPILER;
     for(int i=1;i<argc;++i) {
         if(!strcmp(argv[i],"--help")||!strcmp(argv[i],"-h")){usage(stdout);return 0;}
-        if(!strcmp(argv[i],"--version")){puts("gyy 0.3.0 (Y_ multi-file native compiler)");return 0;}
+        if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
         if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
-        else if(!strcmp(argv[i],"--clang")){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
+        else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
         else if(!strncmp(argv[i],"-O",2)){if(strcmp(argv[i],"-O0")&&strcmp(argv[i],"-O1")&&strcmp(argv[i],"-O2")&&strcmp(argv[i],"-O3")){fprintf(stderr,"gyy: error: invalid optimization option '%s'\n",argv[i]);return 2;}opt=argv[i];}
         else if(!strcmp(argv[i],"-g"))debug=1;
         else if(!strcmp(argv[i],"-Wall")||!strcmp(argv[i],"-Wextra")||!strcmp(argv[i],"-Wpedantic")||!strcmp(argv[i],"-Werror")||!strncmp(argv[i],"-Wno-",5)||!strncmp(argv[i],"-Werror=",8)) {
