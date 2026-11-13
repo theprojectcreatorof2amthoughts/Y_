@@ -6,6 +6,8 @@
 #ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
+#else
+#include <process.h>
 #endif
 #ifndef GY_Y_PROJECT_ROOT
 #define GY_Y_PROJECT_ROOT "."
@@ -83,9 +85,9 @@ static int run(char *const argv[]) {
     if(WIFSIGNALED(status))return 128+WTERMSIG(status);
     return 1;
 #else
-    (void)argv;
-    fputs("gyy: error: process spawning is unavailable on this Windows build\n",stderr);
-    return 127;
+    intptr_t status=_spawnvp(_P_WAIT,argv[0],(const char * const *)argv);
+    if(status==-1){fprintf(stderr,"gyy: error: cannot execute %s: %s\\n",argv[0],strerror(errno));return 127;}
+    return (int)status;
 #endif
 }
 static int compile(const char*clang,const char*out,const char*opt,char **inputs,
@@ -94,8 +96,8 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
     size_t entry=0;
     if(!is_ir) {
         size_t main_count=0;
-        for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".yc")){entry=i;++main_count;}
-        if(main_count!=1){fprintf(stderr,"gyy: error: expected exactly one .yc entry file, found %lu\n",(unsigned long)main_count);return 2;}
+        for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".yc")){if(main_count==0)entry=i;++main_count;}
+        if(main_count==0){fputs("gyy: error: expected at least one .yc entry file\n",stderr);return 2;}
         for(size_t i=0;i<count;++i){sources[i]=read_source(inputs[i]);if(!sources[i])goto fail;}
     }
     char *wrapper=NULL;
