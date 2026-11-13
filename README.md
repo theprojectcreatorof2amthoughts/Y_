@@ -77,4 +77,4 @@ The helpers insert supplied content as raw markup; escape untrusted text before 
 
 New capabilities include exponentiation, floor division, string concatenation, type inspection, numeric conversion, substring and replacement tools, string repetition and reversal, variadic aggregation, angle conversion, geometry math, interpolation, and expanded math functions. The original Y_ vocabulary remains the only keyword vocabulary.
 
-Start with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md). The runtime is not fully Lua-compatible and does not yet include Lua's standard library or bytecode VM.
+Start with [the language guide](docs/language.md) and [the architecture notes](docs/architecture.md), these help you learn how to code in Y_, for the compilation, use [the compiler notes](compiler/README.md).
