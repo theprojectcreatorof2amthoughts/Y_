@@ -24,7 +24,7 @@ libraries embedded when the Y_ project is built.
 
 ## Diagnostics and warning options
 
-`gyy --check file.yc` parses source without executing it or invoking Clang. When it encounters independent syntax errors, it attempts to recover at the next Y_ statement and reports multiple GCC-style diagnostics, such as `source.yc:12:1: error: ...`. The check mode accepts linked `.yc`, `.hly`, and `.yaq` files and requires at least one `.yc` entry file.
+`gyy --check file.yc` parses source without executing it or invoking Clang. When it encounters independent syntax errors, it attempts to recover at the next Y_ statement and reports multiple GCC-style diagnostics, such as `source.yc:12:1: error: ...`. The compiler also performs a static name-analysis pass before invoking Clang: references to undefined variables and calls to undefined functions are rejected at compile time, including references inside procedure bodies. This pass does not execute the source program. The check mode accepts linked `.yc`, `.hly`, and `.yaq` files and requires at least one `.yc` entry file.
 
 Clang's native warnings are shown with source locations and warning option names. Supported Clang options include `-Wall`, `-Wextra`, `-Wpedantic`, `-Werror`, `-Wno-WARNING`, and `-Werror=WARNING`, plus `-g` and `-O0` through `-O3`. `--clang PATH` or the `LLVM_CLANG` environment variable selects Clang. Y_ also provides compiler-native aliases: `--warn-all` enables `-Wall`, `--warn-extra` enables `-Wextra`, `--optimize=0` through `--optimize=3` select optimization levels, and `--debug-info` includes debug symbols. These are `gyy` options, separate from `gy++`'s `--xx-*` options.
 
