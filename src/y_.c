@@ -572,20 +572,17 @@ static void analyze_statements(Stmt *stmt, Env *scope) {
             case S_RETURN:
                 if (s->as.returned.value) analyze_expression(s->as.returned.value, scope);
                 break;
-            case S_IF: {
+            case S_IF:
                 analyze_expression(s->as.conditional.condition, scope);
-                Env *yes_scope = new_env(scope);
-                Env *no_scope = new_env(scope);
-                analyze_statements(s->as.conditional.yes, yes_scope);
-                analyze_statements(s->as.conditional.no, no_scope);
+                /* Branches execute in the current runtime environment. */
+                analyze_statements(s->as.conditional.yes, scope);
+                analyze_statements(s->as.conditional.no, scope);
                 break;
-            }
-            case S_WHILE: {
+            case S_WHILE:
                 analyze_expression(s->as.loop.condition, scope);
-                Env *loop_scope = new_env(scope);
-                analyze_statements(s->as.loop.body, loop_scope);
+                /* Loop bodies also execute in the current environment. */
+                analyze_statements(s->as.loop.body, scope);
                 break;
-            }
             case S_INCLUDE: case S_ADEQUIT:
                 /* Their paths are expressions; imports are not executed by analysis. */
                 analyze_expression(s->as.expression, scope);
