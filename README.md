@@ -21,7 +21,7 @@ gy++ examples/main.yxx --warn-all --optimize=2 -o modernxx
 
 Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
 
-The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. `gy++` is the YXX toolchain command: it accepts `.yxx` entry files and uses `clang++` as its native linker driver while retaining the Y_ runtime. Both accept textual LLVM IR (`.ll`). See [compiler/README.md](compiler/README.md) for their native command-line flags.
+The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. `gy++` is the YXX toolchain command: it accepts `.yxx` entry files and uses `clang++` as its native linker driver while retaining the Y_ runtime. Both accept textual LLVM IR (`.ll`). See [compiler/README.md](compiler/README.md) for their native command-line flags. See the [Makefile compiler guide](docs/compilers/Makefile.md) for complete Y_ and YXX application Makefiles, including the separate `GYFLAGS` and `GYXXFLAGS` variables. Individual guides: [Y_ Makefile](docs/compilers/Y_-Makefile.md) and [YXX Makefile](docs/compilers/YXX-Makefile.md).
 
 ## Language
 
