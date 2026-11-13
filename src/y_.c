@@ -1035,6 +1035,14 @@ static bool run_source(const char *source, const char *path, Env *env) {
     return !failed;
 }
 
+int y_program_run_source(const char *source, const char *path) {
+    Env *globals = new_env(NULL);
+    failed = false;
+    source_depth = 0;
+    run_source(source, path ? path : "<compiled>", globals);
+    return failed ? 1 : 0;
+}
+
 int y_program_main(int argc, char **argv) {
     Env *globals = new_env(NULL);
     if (argc == 2 && strcmp(argv[1], "--version") == 0) {
@@ -1045,8 +1053,9 @@ int y_program_main(int argc, char **argv) {
     if (argc == 2) {
         char *source = read_entire_file(argv[1], NULL);
         if (!source) return 1;
-        run_source(source, argv[1], globals); free(source);
-        return failed ? 1 : 0;
+        int result = y_program_run_source(source, argv[1]);
+        free(source);
+        return result;
     }
     char line[4096];
     fputs("Y_ interactive mode (Ctrl-D to exit)\n", stdout);
