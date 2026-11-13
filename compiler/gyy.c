@@ -106,13 +106,13 @@ static int check_sources(char **inputs, size_t count) {
     size_t entry = SIZE_MAX;
     for (size_t i = 0; i < count; ++i) {
         if (has_extension(inputs[i], ".ll")) {
-            fprintf(stderr, "gyy: error: --check accepts Y_ source files, not '%s'\\n", inputs[i]);
+            fprintf(stderr, "gyy: error: --check accepts Y_ source files, not '%s'\n", inputs[i]);
             goto fail;
         }
         if (!has_extension(inputs[i], ".yc") &&
             !has_extension(inputs[i], ".hly") &&
             !has_extension(inputs[i], ".yaq")) {
-            fprintf(stderr, "gyy: error: unsupported source file '%s' for --check\\n", inputs[i]);
+            fprintf(stderr, "gyy: error: unsupported source file '%s' for --check\n", inputs[i]);
             goto fail;
         }
         if (entry == SIZE_MAX && has_extension(inputs[i], ".yc")) entry = i;
@@ -122,7 +122,7 @@ static int check_sources(char **inputs, size_t count) {
         paths[i] = inputs[i];
     }
     if (entry == SIZE_MAX) {
-        fputs("gyy: error: --check requires at least one .yc entry file\\n", stderr);
+        fputs("gyy: error: --check requires at least one .yc entry file\n", stderr);
         goto fail;
     }
     {
