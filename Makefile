@@ -3,10 +3,6 @@ CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic
 
 .PHONY: all clean libraries FORCE install
 
-# Native Y_ compiler command-line defaults (override on the make command line).
-GYFLAGS ?= --warn-all --warn-extra --warn-pedantic --optimize=2
-GYXXFLAGS ?= --warn-all --warn-extra --warn-pedantic --optimize=2
-
 LIBRARY_FILES := $(shell find . -type f -name '*.hly' -not -path './.git/*' -not -path './build/*' | LC_ALL=C sort)
 EMBEDDER := build/embed_hly
 EMBEDDED_SOURCE := build/embedded_libraries.c
