@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +87,7 @@ static int run(char *const argv[]) {
     return 1;
 #else
     intptr_t status=_spawnvp(_P_WAIT,argv[0],(const char * const *)argv);
-    if(status==-1){fprintf(stderr,"gyy: error: cannot execute %s: %s\\n",argv[0],strerror(errno));return 127;}
+    if(status==-1){fprintf(stderr,"gyy: error: cannot execute %s: %s\n",argv[0],strerror(errno));return 127;}
     return (int)status;
 #endif
 }

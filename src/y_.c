@@ -1041,7 +1041,7 @@ int y_program_run_sources(const char *const *sources, const char *const *paths,
     failed = false;
     source_depth = 0;
     if (!sources || !paths || count == 0 || entry_index >= count) {
-        fprintf(stderr, "gyy: error: invalid compiled source list\\n");
+        fprintf(stderr, "gyy: error: invalid compiled source list\n");
         return 2;
     }
     for (size_t i = 0; i < count && !failed; ++i) {
