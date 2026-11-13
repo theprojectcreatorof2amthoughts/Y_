@@ -31,3 +31,23 @@ the `LLVM_CLANG` environment variable selects Clang.
 The current backend packages Y_ source and the existing interpreter/runtime into
 a native executable. It is a native executable build with module bundling, not
 yet a direct Y_-to-LLVM-IR frontend.
+
+
+## gy++: C++-toolchain variant
+
+`gy++` is built from the same driver implementation as `gyy` and supports the
+same Y_ entry/module inputs, shared module environment, embedded source bundling,
+standalone textual LLVM IR input, output naming, optimization levels, debug info,
+and warning controls. It selects `clang++` by default, accepts
+`--clang++ PATH`, and reads `LLVM_CLANGXX` when set.
+
+```sh
+make gy++
+gy++ main.yc math.yc tools.yaq -Wall -Wextra -O2 -o app
+./app
+```
+
+This makes gy++ the C++-toolchain counterpart for building Y_ programs; it does
+not turn Y_ syntax into C++ or add a C++ foreign-function interface. The Y_
+runtime and generated launcher remain C sources and are compiled by the selected
+LLVM driver as C translation units before C++-toolchain linking.
