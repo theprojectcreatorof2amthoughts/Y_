@@ -1056,7 +1056,7 @@ static bool run_source(const char *source, const char *path, Env *env) {
     tokenize(&parser, source);
     Stmt *program = (!failed || check_only) ? parse_block(&parser, false) : NULL;
     if ((!failed || check_only) && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
-    if (!failed) execute_list(program, env);
+    if (!check_only && !failed) execute_list(program, env);
     active_path = old_path;
     --source_depth;
     return !failed;
