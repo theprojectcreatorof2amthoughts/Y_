@@ -1,26 +1,29 @@
-# gyy and the LLVM backend
+# gyy: Y_ native compiler
 
-## Bootstrap capability
-
-The initial `gyy` driver accepts textual LLVM IR (`.ll`) and invokes Clang
-to produce a native executable:
+`gyy` accepts Y_ source files (`.yc`) and textual LLVM IR (`.ll`). For Y_ source,
+it creates a small C translation unit containing the source text and compiles that
+translation unit together with the Y_ runtime using Clang. The resulting executable
+contains the program and runtime; the original `.yc` file is not needed to start it.
 
 ```sh
+make
+gyy examples/hello.yc -o hello
+./hello
+
+gyy examples/modern.yc -O2 -o modern
+./modern
+
 gyy program.ll -o program
-gyy program.ll -O2 -o program
-LLVM_CLANG=/path/to/clang gyy program.ll -o program
 ```
 
-This is the backend/toolchain bootstrap only. The Y_ source frontend is not
-implemented yet, and this version intentionally rejects `.yc` files rather
-than pretending to compile them.
+The native Y_ backend packages the existing lexer, parser, evaluator, memory
+subsystem, file I/O, and build-embedded `.hly` libraries into each output. This
+preserves the existing Y_ vocabulary and behavior. It is a native executable
+compiler, but not yet a direct Y_-to-LLVM-IR frontend: the generated executable
+embeds the Y_ source and runs it through the compiled runtime. A future LLVM
+frontend can replace this backend without changing Y_ syntax.
 
-## Frontend requirements
-
-The next stage will add a separate Y_ source frontend that lowers supported
-language constructs to LLVM IR. The existing interpreter remains available.
-The compiler must preserve the language vocabulary and constructs, including
-`stash`, `define`, `give`, `when`, `doit`, `else`, `done`,
-`repeatwhile`, `execute`, `escape`, `writescrn >^`, `errstate <^`,
-`both`, `either`, `invert`, custom `!$name` variables, and `!#`
-directives. Unsupported syntax must produce explicit diagnostics.
+`!#libinc` and `!#adeq` continue to load external files at runtime, so those
+imported files must remain available. `!#inclib` libraries are embedded during
+the Y_ project build. Set `LLVM_CLANG` or pass `--clang path` to select Clang.
+The optimization flags `-O0`, `-O1`, `-O2`, and `-O3` are forwarded to Clang.
