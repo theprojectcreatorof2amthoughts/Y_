@@ -19,19 +19,11 @@
 #define MAX_INPUTS 128
 #define MAX_FLAGS 64
 
-#ifdef GYPP_DRIVER
-#define DRIVER_NAME "gy++"
-#define DRIVER_VERSION "gy++ 0.4.0 (Y_ multi-file C++ driver)"
-#define DEFAULT_COMPILER_ENV "LLVM_CLANGXX"
-#define COMPILER_OPTION "--clang++"
-#define DEFAULT_COMPILER "clang++"
-#else
 #define DRIVER_NAME "gyy"
 #define DRIVER_VERSION "gyy 0.4.0 (Y_ multi-file native compiler)"
 #define DEFAULT_COMPILER_ENV "LLVM_CLANG"
 #define COMPILER_OPTION "--clang"
 #define DEFAULT_COMPILER "clang"
-#endif
 
 static void usage(FILE *f) {
     fputs("gyy - Y_ native compiler (Clang backend)\n"
@@ -134,13 +126,7 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
     for(size_t i=0;i<warning_count;++i)args[a++]=(char*)warnings[i];
     if(!is_ir) {
         args[a++]="-I";args[a++]=inc;
-#ifdef GYPP_DRIVER
-        args[a++]="-x";args[a++]="c";
-#endif
         args[a++]=wrapper;args[a++]=rt;args[a++]=mem;args[a++]=io;
-#ifdef GYPP_DRIVER
-        args[a++]="-x";args[a++]="none";
-#endif
         args[a++]=(char*)GY_Y_EMBEDDED_SOURCE;args[a++]="-lm";
     } else args[a++]=inputs[0];
     args[a++]="-o";args[a++]=(char*)out;args[a]=NULL;
