@@ -1,0 +1,10 @@
+stash known = 42
+writescrn >^ known
+writescrn >^ missing_global
+
+define show(value)
+    writescrn >^ value
+    writescrn >^ missing_inside_function
+done
+
+show("test")
