@@ -1,29 +1,33 @@
 # gyy: Y_ native compiler
 
-`gyy` accepts Y_ source files (`.yc`) and textual LLVM IR (`.ll`). For Y_ source,
-it creates a small C translation unit containing the source text and compiles that
-translation unit together with the Y_ runtime using Clang. The resulting executable
-contains the program and runtime; the original `.yc` file is not needed to start it.
+`gyy` accepts one Y_ entry file plus any number of Y_ modules. Source files may use
+`.yc`, `.hly`, or `.yaq`. It compiles the whole set into one native executable.
 
 ```sh
 make
-gyy examples/hello.yc -o hello
-./hello
-
-gyy examples/modern.yc -O2 -o modern
-./modern
-
-gyy program.ll -o program
+gyy main.yc math.yc strings.hly tools.yaq -O2 -o app
+./app
 ```
 
-The native Y_ backend packages the existing lexer, parser, evaluator, memory
-subsystem, file I/O, and build-embedded `.hly` libraries into each output. This
-preserves the existing Y_ vocabulary and behavior. It is a native executable
-compiler, but not yet a direct Y_-to-LLVM-IR frontend: the generated executable
-embeds the Y_ source and runs it through the compiled runtime. A future LLVM
-frontend can replace this backend without changing Y_ syntax.
+The first `.yc` file on the command line is the entry program. Any additional `.yc` files, along with `.hly` and `.yaq` files, are loaded as
+modules into the same global environment **before** the entry program runs. This
+allows the entry file to call procedures defined in any linked module. Module
+files are embedded in the executable; they do not need to be present when the
+executable starts. Existing `!#libinc` and `!#adeq` directives still load their
+explicitly named external files at runtime. `!#inclib` continues to use the HLY
+libraries embedded when the Y_ project is built.
 
-`!#libinc` and `!#adeq` continue to load external files at runtime, so those
-imported files must remain available. `!#inclib` libraries are embedded during
-the Y_ project build. Set `LLVM_CLANG` or pass `--clang path` to select Clang.
-The optimization flags `-O0`, `-O1`, `-O2`, and `-O3` are forwarded to Clang.
+`gyy` also accepts one textual LLVM IR `.ll` file by itself.
+
+## Diagnostics and warning options
+
+Diagnostics use GCC-style locations, for example
+`source.yc:12:1: error: division by zero`. Clang's native warnings are shown
+with source locations and warning option names. Supported options include
+`-Wall`, `-Wextra`, `-Wpedantic`, `-Werror`, `-Wno-WARNING`, and
+`-Werror=WARNING`, plus `-g` and `-O0` through `-O3`. `--clang PATH` or
+the `LLVM_CLANG` environment variable selects Clang.
+
+The current backend packages Y_ source and the existing interpreter/runtime into
+a native executable. It is a native executable build with module bundling, not
+yet a direct Y_-to-LLVM-IR frontend.
