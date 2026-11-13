@@ -52,7 +52,13 @@ if(NOT WIN32)
     target_link_libraries(ylang PRIVATE m)
 endif()
 
+add_custom_target(gyy_runtime_assets DEPENDS "${EMBEDDED_SOURCE}")
 add_executable(gyy compiler/gyy.c)
+add_dependencies(gyy gyy_runtime_assets)
+target_compile_definitions(gyy PRIVATE
+    GY_Y_PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    GY_Y_EMBEDDED_SOURCE="${EMBEDDED_SOURCE}"
+)
 target_compile_options(gyy PRIVATE -Wall -Wextra -Wpedantic)
 
 install(TARGETS ylang gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
