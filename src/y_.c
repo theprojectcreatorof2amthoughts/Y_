@@ -72,7 +72,7 @@ static bool failed;
 static const char *active_path = "<input>";
 
 static void report_error(int line, const char *message) {
-    if (!failed) fprintf(stderr, "%s:%d: %s\n", active_path, line, message);
+    if (!failed) fprintf(stderr, "%s:%d:1: error: %s\n", active_path, line, message);
     failed = true;
 }
 
@@ -1035,12 +1035,29 @@ static bool run_source(const char *source, const char *path, Env *env) {
     return !failed;
 }
 
-int y_program_run_source(const char *source, const char *path) {
+int y_program_run_sources(const char *const *sources, const char *const *paths,
+                          size_t count, size_t entry_index) {
     Env *globals = new_env(NULL);
     failed = false;
     source_depth = 0;
-    run_source(source, path ? path : "<compiled>", globals);
+    if (!sources || !paths || count == 0 || entry_index >= count) {
+        fprintf(stderr, "gyy: error: invalid compiled source list\\n");
+        return 2;
+    }
+    for (size_t i = 0; i < count && !failed; ++i) {
+        if (i != entry_index)
+            run_source(sources[i], paths[i] ? paths[i] : "<module>", globals);
+    }
+    if (!failed)
+        run_source(sources[entry_index],
+                   paths[entry_index] ? paths[entry_index] : "<compiled>", globals);
     return failed ? 1 : 0;
+}
+
+int y_program_run_source(const char *source, const char *path) {
+    const char *sources[] = { source };
+    const char *paths[] = { path ? path : "<compiled>" };
+    return y_program_run_sources(sources, paths, 1, 0);
 }
 
 int y_program_main(int argc, char **argv) {
