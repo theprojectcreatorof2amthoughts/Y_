@@ -517,6 +517,123 @@ static void define_value(Env *env, const char *name, Value value) {
     env->names[env->count] = (char *)name; env->values[env->count++] = value;
 }
 
+
+static bool is_builtin_name(const char *name) {
+    static const char *const names[] = {
+        "memread","memwrite","tostring","input","type","tonumber","length",
+        "abs","sqrt","floor","ceil","round","pow","min","max","sin","cos",
+        "tan","log","exp","sign","isnumber","isstring","isboolean","isvoid",
+        "upper","lower","contains","startswith","endswith","substring","replace",
+        "repeat","reverse","charat","isfinite","isnan","hypot","atan2","radians",
+        "degrees","sum","average","clamp","lerp"
+    };
+    for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); ++i)
+        if (strcmp(name, names[i]) == 0) return true;
+    return false;
+}
+
+/* Static name analysis: it deliberately does not evaluate expressions or run code. */
+static void analyze_expression(Expr *expr, Env *scope);
+
+static void analyze_statements(Stmt *stmt, Env *scope) {
+    /* Register procedure names first, so mutually-referencing procedures work. */
+    for (Stmt *s = stmt; s; s = s->next) {
+        if (s->kind == S_FUNCTION) {
+            Value function = { .kind = V_FUNCTION };
+            define_value(scope, s->as.function.name, function);
+        }
+    }
+    for (Stmt *s = stmt; s; s = s->next) {
+        switch (s->kind) {
+            case S_LOCAL:
+                if (s->as.variable.value) analyze_expression(s->as.variable.value, scope);
+                if (!find_value(scope, s->as.variable.name))
+                    define_value(scope, s->as.variable.name, nil_value());
+                break;
+            case S_ASSIGN:
+                analyze_expression(s->as.variable.value, scope);
+                if (!find_value(scope, s->as.variable.name))
+                    define_value(scope, s->as.variable.name, nil_value());
+                break;
+            case S_EXPR: case S_OUTPUT: case S_ERROR_OUTPUT:
+                analyze_expression(s->as.expression, scope);
+                break;
+            case S_MEMORY:
+                analyze_expression(s->as.memory.size, scope);
+                if (!find_value(scope, s->as.memory.name))
+                    define_value(scope, s->as.memory.name, nil_value());
+                break;
+            case S_FUNCTION: {
+                Env *function_scope = new_env(scope);
+                for (size_t i = 0; i < s->as.function.count; ++i)
+                    define_value(function_scope, s->as.function.params[i], nil_value());
+                analyze_statements(s->as.function.body, function_scope);
+                break;
+            }
+            case S_RETURN:
+                if (s->as.returned.value) analyze_expression(s->as.returned.value, scope);
+                break;
+            case S_IF: {
+                analyze_expression(s->as.conditional.condition, scope);
+                Env *yes_scope = new_env(scope);
+                Env *no_scope = new_env(scope);
+                analyze_statements(s->as.conditional.yes, yes_scope);
+                analyze_statements(s->as.conditional.no, no_scope);
+                break;
+            }
+            case S_WHILE: {
+                analyze_expression(s->as.loop.condition, scope);
+                Env *loop_scope = new_env(scope);
+                analyze_statements(s->as.loop.body, loop_scope);
+                break;
+            }
+            case S_INCLUDE: case S_ADEQUIT:
+                /* Their paths are expressions; imports are not executed by analysis. */
+                analyze_expression(s->as.expression, scope);
+                break;
+            case S_EMBEDDED_INCLUDE: case S_BREAK:
+                break;
+        }
+    }
+}
+
+static void analyze_expression(Expr *expr, Env *scope) {
+    if (!expr) return;
+    switch (expr->kind) {
+        case E_VALUE:
+            break;
+        case E_VARIABLE:
+            if (!find_value(scope, expr->as.name)) {
+                char message[256];
+                snprintf(message, sizeof(message), "use of undefined name '%s'", expr->as.name);
+                report_error(expr->line, message);
+            }
+            break;
+        case E_UNARY:
+            analyze_expression(expr->as.unary.right, scope);
+            break;
+        case E_BINARY:
+            if (strcmp(expr->as.binary.op, "define=") != 0)
+                analyze_expression(expr->as.binary.left, scope);
+            analyze_expression(expr->as.binary.right, scope);
+            break;
+        case E_CALL:
+            if (expr->as.call.callee && expr->as.call.callee->kind == E_VARIABLE) {
+                const char *name = expr->as.call.callee->as.name;
+                if (!is_builtin_name(name) && !find_value(scope, name)) {
+                    char message[256];
+                    snprintf(message, sizeof(message), "call to undefined function '%s'", name);
+                    report_error(expr->line, message);
+                }
+            } else {
+                analyze_expression(expr->as.call.callee, scope);
+            }
+            for (size_t i = 0; i < expr->as.call.count; ++i)
+                analyze_expression(expr->as.call.args[i], scope);
+            break;
+    }
+}
+
 static bool truthy(Value value) { return value.kind != V_NIL && !(value.kind == V_BOOL && !value.as.boolean); }
 
 static void write_value(FILE *out, Value value) {
@@ -1056,6 +1173,7 @@ static bool run_source(const char *source, const char *path, Env *env) {
     tokenize(&parser, source);
     Stmt *program = (!failed || check_only) ? parse_block(&parser, false) : NULL;
     if ((!failed || check_only) && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
+    if (check_only && program) analyze_statements(program, env);
     if (!check_only && !failed) execute_list(program, env);
     active_path = old_path;
     --source_depth;
