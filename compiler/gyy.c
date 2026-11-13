@@ -153,9 +153,9 @@ int main(int argc,char**argv) {
         if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
         else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
         else if(!strncmp(argv[i],"-O",2)){if(strcmp(argv[i],"-O0")&&strcmp(argv[i],"-O1")&&strcmp(argv[i],"-O2")&&strcmp(argv[i],"-O3")){fprintf(stderr,"gyy: error: invalid optimization option '%s'\n",argv[i]);return 2;}opt=argv[i];}
-        else if(!strncmp(argv[i],"--optimize=",11)){const char *level=argv[i]+11;static char native_opt[4];if(strlen(level)!=1||level[0]<'0'||level[0]>'3'){fprintf(stderr,"gyy: error: invalid Y_ optimization option '%s'\\n",argv[i]);return 2;}snprintf(native_opt,sizeof(native_opt),"-O%c",level[0]);opt=native_opt;}
-        else if(!strcmp(argv[i],"--warn-all")){if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\\n",stderr);return 2;}warnings[warning_count++]="-Wall";}
-        else if(!strcmp(argv[i],"--warn-extra")){if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\\n",stderr);return 2;}warnings[warning_count++]="-Wextra";}
+        else if(!strncmp(argv[i],"--optimize=",11)){const char *level=argv[i]+11;static char native_opt[4];if(strlen(level)!=1||level[0]<'0'||level[0]>'3'){fprintf(stderr,"gyy: error: invalid Y_ optimization option '%s'\n",argv[i]);return 2;}snprintf(native_opt,sizeof(native_opt),"-O%c",level[0]);opt=native_opt;}
+        else if(!strcmp(argv[i],"--warn-all")){if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\n",stderr);return 2;}warnings[warning_count++]="-Wall";}
+        else if(!strcmp(argv[i],"--warn-extra")){if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\n",stderr);return 2;}warnings[warning_count++]="-Wextra";}
         else if(!strcmp(argv[i],"-g")||!strcmp(argv[i],"--debug-info"))debug=1;
         else if(!strcmp(argv[i],"-Wall")||!strcmp(argv[i],"-Wextra")||!strcmp(argv[i],"-Wpedantic")||!strcmp(argv[i],"-Werror")||!strncmp(argv[i],"-Wno-",5)||!strncmp(argv[i],"-Werror=",8)) {
             if(warning_count==MAX_FLAGS){fputs("gyy: error: too many warning options\n",stderr);return 2;}
