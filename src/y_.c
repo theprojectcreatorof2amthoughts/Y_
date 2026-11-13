@@ -69,10 +69,11 @@ struct Stmt {
 };
 
 static bool failed;
+static bool check_only;
 static const char *active_path = "<input>";
 
 static void report_error(int line, const char *message) {
-    if (!failed) fprintf(stderr, "%s:%d:1: error: %s\n", active_path, line, message);
+    if (!failed || check_only) fprintf(stderr, "%s:%d:1: error: %s\n", active_path, line, message);
     failed = true;
 }
 
@@ -99,7 +100,7 @@ static bool is_name_char(char c) { return isalnum((unsigned char)c) || c == '_';
 static void tokenize(Parser *parser, const char *source) {
     const char *cursor = source;
     int line = 1;
-    while (*cursor && !failed) {
+    while (*cursor && (!failed || check_only)) {
         if (*cursor == '\n') { ++line; ++cursor; continue; }
         if (isspace((unsigned char)*cursor)) { ++cursor; continue; }
         if (cursor[0] == '#' && cursor[1] == '#') {
@@ -358,7 +359,7 @@ static int precedence(Parser *p, const char **op) {
 
 static Expr *parse_expression(Parser *p, int minimum) {
     Expr *left = parse_prefix(p);
-    while (!failed) {
+    while (!failed || check_only) {
         const char *op = NULL;
         int level = precedence(p, &op);
         if (level < minimum || level == 0) break;
@@ -374,9 +375,21 @@ static Expr *parse_expression(Parser *p, int minimum) {
     return left;
 }
 
+static void synchronize_parser(Parser *p) {
+    while (peek(p)->kind != T_EOF) {
+        if (match(p, T_SEMI)) return;
+        if (keyword(p, "done") || keyword(p, "else")) return;
+        if (keyword(p, "stash") || keyword(p, "define") || keyword(p, "when") ||
+            keyword(p, "repeatwhile") || keyword(p, "give") || keyword(p, "escape") ||
+            keyword(p, "writescrn") || keyword(p, "errstate") || keyword(p, "memdesig"))
+            return;
+        ++p->at;
+    }
+}
+
 static Stmt *parse_block(Parser *p, bool stop_at_else) {
     Stmt *head = NULL, **tail = &head;
-    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "else")) && !failed) {
+    while (peek(p)->kind != T_EOF && !keyword(p, "done") && !(stop_at_else && keyword(p, "else")) && (!failed || check_only)) {
         if (match(p, T_SEMI)) continue;
         size_t before = p->at;
         Stmt *stmt = NULL;
@@ -384,6 +397,7 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
         if (match_keyword(p, "stash")) {
             if (!match(p, T_NAME) && !match(p, T_CUSTOM)) {
                 report_error(peek(p)->line, "expected a variable name after stash");
+                if (check_only) { synchronize_parser(p); continue; }
                 break;
             }
             Token name = *previous(p);
@@ -391,7 +405,10 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
             if (match(p, T_ASSIGN)) stmt->as.variable.value = parse_expression(p, 1);
         } else if (match_keyword(p, "define")) {
             Token name = *peek(p);
-            if (!expect(p, T_NAME, "expected a procedure name")) break;
+            if (!expect(p, T_NAME, "expected a procedure name")) {
+                if (check_only) { synchronize_parser(p); continue; }
+                break;
+            }
             stmt = new_stmt(S_FUNCTION, start.line); stmt->as.function.name = name.text;
             expect(p, T_LPAREN, "expected '(' after procedure name");
             if (!match(p, T_RPAREN)) {
@@ -460,11 +477,21 @@ static Stmt *parse_block(Parser *p, bool stop_at_else) {
                 stmt = new_stmt(S_EXPR, start.line); stmt->as.expression = parse_expression(p, 1);
             }
         } else {
-            report_error(peek(p)->line, "unexpected token at start of statement"); break;
+            report_error(peek(p)->line, "unexpected token at start of statement");
+            if (check_only) { synchronize_parser(p); continue; }
+            break;
         }
         if (stmt) { *tail = stmt; tail = &stmt->next; }
         match(p, T_SEMI);
-        if (p->at == before) { report_error(peek(p)->line, "parser made no progress"); break; }
+        if (p->at == before) {
+            report_error(peek(p)->line, "parser made no progress");
+            if (check_only) {
+                if (peek(p)->kind != T_EOF) ++p->at;
+                synchronize_parser(p);
+                continue;
+            }
+            break;
+        }
     }
     return head;
 }
@@ -1027,8 +1054,8 @@ static bool run_source(const char *source, const char *path, Env *env) {
     const char *old_path = active_path; active_path = path;
     Parser parser = { .path = path };
     tokenize(&parser, source);
-    Stmt *program = failed ? NULL : parse_block(&parser, false);
-    if (!failed && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
+    Stmt *program = (!failed || check_only) ? parse_block(&parser, false) : NULL;
+    if ((!failed || check_only) && peek(&parser)->kind != T_EOF) report_error(peek(&parser)->line, "unexpected trailing input");
     if (!failed) execute_list(program, env);
     active_path = old_path;
     --source_depth;
@@ -1039,6 +1066,7 @@ int y_program_run_sources(const char *const *sources, const char *const *paths,
                           size_t count, size_t entry_index) {
     Env *globals = new_env(NULL);
     failed = false;
+    check_only = false;
     source_depth = 0;
     if (!sources || !paths || count == 0 || entry_index >= count) {
         fprintf(stderr, "gyy: error: invalid compiled source list\n");
@@ -1051,6 +1079,26 @@ int y_program_run_sources(const char *const *sources, const char *const *paths,
     if (!failed)
         run_source(sources[entry_index],
                    paths[entry_index] ? paths[entry_index] : "<compiled>", globals);
+    return failed ? 1 : 0;
+}
+
+int y_program_check_sources(const char *const *sources, const char *const *paths,
+                           size_t count, size_t entry_index) {
+    if (!sources || !paths || count == 0 || entry_index >= count) {
+        fprintf(stderr, "gyy: error: invalid source list for --check\n");
+        return 2;
+    }
+    Env *globals = new_env(NULL);
+    failed = false;
+    check_only = true;
+    source_depth = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if (i != entry_index)
+            run_source(sources[i], paths[i] ? paths[i] : "<module>", globals);
+    }
+    run_source(sources[entry_index],
+               paths[entry_index] ? paths[entry_index] : "<entry>", globals);
+    check_only = false;
     return failed ? 1 : 0;
 }
 
