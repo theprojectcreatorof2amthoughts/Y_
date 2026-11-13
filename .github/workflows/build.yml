@@ -1,0 +1,27 @@
+name: Y_ build and compiler tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install Clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+      - name: Build interpreter and native compiler
+        run: make clean && make
+      - name: Test multi-error diagnostics
+        run: make test-diagnostics
+      - name: Check and compile a Y_ program
+        run: |
+          ./gyy --check examples/hello.yc
+          ./gyy examples/hello.yc --optimize=2 --warn-all -o build/hello
+          ./build/hello
