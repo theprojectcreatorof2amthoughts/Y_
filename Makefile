@@ -1,7 +1,7 @@
 CC ?= cc
 CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic
 
-.PHONY: all clean libraries FORCE install
+.PHONY: all clean libraries FORCE test-diagnostics install
 
 LIBRARY_FILES := $(shell find . -type f -name '*.hly' -not -path './.git/*' -not -path './build/*' | LC_ALL=C sort)
 EMBEDDER := build/embed_hly
@@ -28,3 +28,6 @@ ylang: src/main.c src/y_.c src/memory.c src/file_io.c src/y_.h src/memory.h src/
 
 clean:
 	rm -f ylang y_ gyy $(EMBEDDER) $(EMBEDDED_SOURCE)
+
+test-diagnostics: gyy
+	sh tests/test_multi_error.sh
