@@ -22,6 +22,6 @@ jobs:
         run: make test-diagnostics
       - name: Check and compile a Y_ program
         run: |
-          ./gyy --check examples/hello.yc
-          ./gyy examples/hello.yc --optimize=2 --warn-all -o build/hello
-          ./build/hello
+          ./gyy --check examples/modern.yc
+          ./gyy examples/modern.yc --optimize=2 --warn-all -o build/modern
+          ./build/modern
