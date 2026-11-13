@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Y_ VERSION 0.4.0 LANGUAGES C)
+project(Y_ VERSION 0.5.0 LANGUAGES C)
 
 include(GNUInstallDirs)
 
@@ -61,7 +61,17 @@ target_compile_definitions(gyy PRIVATE
 )
 target_compile_options(gyy PRIVATE -Wall -Wextra -Wpedantic)
 
-install(TARGETS ylang gyy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+add_executable(gyxx compiler/gyy.c)
+set_target_properties(gyxx PROPERTIES OUTPUT_NAME "gy++")
+add_dependencies(gyxx gyy_runtime_assets)
+target_compile_definitions(gyxx PRIVATE
+    GYXX_DRIVER=1
+    GY_Y_PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    GY_Y_EMBEDDED_SOURCE="${EMBEDDED_SOURCE}"
+)
+target_compile_options(gyxx PRIVATE -Wall -Wextra -Wpedantic)
+
+install(TARGETS ylang gyy gyxx RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 set(CPACK_PACKAGE_NAME "y-language")
 set(CPACK_PACKAGE_VENDOR "Y_ Project")
