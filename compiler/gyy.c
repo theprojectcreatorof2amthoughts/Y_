@@ -138,6 +138,7 @@ fail:
 static int compile(const char*clang,const char*out,const char*opt,char **inputs,
                    size_t count,int is_ir,const char **warnings,size_t warning_count,int debug) {
     char *sources[MAX_INPUTS]={0};
+    char *wrapper=NULL;
     size_t entry=0;
     if(!is_ir) {
         size_t main_count=0;
@@ -152,7 +153,6 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
             return diagnostics;
         }
     }
-    char *wrapper=NULL;
     if(!is_ir) {
         size_t n=strlen(out)+16;wrapper=malloc(n);
         if(!wrapper){fprintf(stderr,"gyy: error: out of memory\n");goto fail;}
@@ -193,9 +193,9 @@ int main(int argc,char**argv) {
     if(!clang||!*clang)clang=DEFAULT_COMPILER;
     for(int i=1;i<argc;++i) {
         if(!strcmp(argv[i],"--help")||!strcmp(argv[i],"-h")){usage(stdout);return 0;}
+        else if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
         else if(!strcmp(argv[i],"--check"))check_only=1;
-        if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
-        if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
+        else if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
         else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
         else if(!strncmp(argv[i],"-O",2)){if(strcmp(argv[i],"-O0")&&strcmp(argv[i],"-O1")&&strcmp(argv[i],"-O2")&&strcmp(argv[i],"-O3")){fprintf(stderr,"gyy: error: invalid optimization option '%s'\n",argv[i]);return 2;}opt=argv[i];}
         else if(!strncmp(argv[i],"--optimize=",11)){const char *level=argv[i]+11;static char native_opt[4];if(strlen(level)!=1||level[0]<'0'||level[0]>'3'){fprintf(stderr,"gyy: error: invalid Y_ optimization option '%s'\n",argv[i]);return 2;}snprintf(native_opt,sizeof(native_opt),"-O%c",level[0]);opt=native_opt;}
