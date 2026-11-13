@@ -12,8 +12,11 @@ make
 gyy examples/project.yc -o project
 ./project
 
-gyy examples/modern.yc -O2 -o modern
+gyy --check examples/modern.yc
+gyy examples/modern.yc --optimize=2 --warn-all -o modern
 ./modern
+
+make test-diagnostics
 ```
 
 Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
