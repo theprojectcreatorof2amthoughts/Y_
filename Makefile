@@ -19,9 +19,9 @@ $(EMBEDDED_SOURCE): FORCE $(EMBEDDER) src/embedded_libraries.h
 	$(EMBEDDER) $@.tmp $(LIBRARY_FILES)
 	@if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
 
-gyy: compiler/gyy.c $(EMBEDDED_SOURCE)
+gyy: compiler/gyy.c src/y_.c src/y_.h src/memory.c src/memory.h src/file_io.c src/file_io.h $(EMBEDDED_SOURCE)
 	mkdir -p build
-	$(CC) $(CFLAGS) -DGY_Y_PROJECT_ROOT='"$(CURDIR)"' -DGY_Y_EMBEDDED_SOURCE='"$(CURDIR)/$(EMBEDDED_SOURCE)"' -o $@ $<
+	$(CC) $(CFLAGS) -Isrc -DGY_Y_PROJECT_ROOT='"$(CURDIR)"' -DGY_Y_EMBEDDED_SOURCE='"$(CURDIR)/$(EMBEDDED_SOURCE)"' -o $@ compiler/gyy.c src/y_.c src/memory.c src/file_io.c $(EMBEDDED_SOURCE) -lm
 
 ylang: src/main.c src/y_.c src/memory.c src/file_io.c src/y_.h src/memory.h src/file_io.h src/embedded_libraries.h $(EMBEDDED_SOURCE)
 	$(CC) $(CFLAGS) -Isrc -o $@ src/main.c src/y_.c src/memory.c src/file_io.c $(EMBEDDED_SOURCE) -lm
