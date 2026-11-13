@@ -8,11 +8,17 @@ Y_ is a modular scripting language implemented in portable C11. It keeps its ori
 make
 ./ylang examples/hello.yc
 ./ylang examples/project.yc
+
+gyy examples/project.yc -o project
+./project
+
+gyy examples/modern.yc -O2 -o modern
+./modern
 ```
 
 Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
 
-The interpreter executable is named `ylang` (not `y_`). The initial `gyy` bootstrap driver accepts textual LLVM IR (`.ll`) and uses Clang to produce native executables. The Y_ source frontend is not yet implemented; see [compiler/README.md](compiler/README.md).
+The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. It also accepts textual LLVM IR (`.ll`). See [compiler/README.md](compiler/README.md).
 
 ## Language
 
