@@ -150,7 +150,7 @@ static void tokenize(Parser *parser, const char *source) {
             while (is_name_char(*cursor)) ++cursor;
             size_t directive_length = (size_t)(cursor - start);
             if (directive_length == 7 && strncmp(start, "inptype", 7) == 0) {
-                while (*cursor == ' ' || *cursor == '\\t') ++cursor;
+                while (*cursor == ' ' || *cursor == '\t') ++cursor;
                 if (*cursor != '(') {
                     report_error(line, "expected '(' after !#inptype");
                     break;
