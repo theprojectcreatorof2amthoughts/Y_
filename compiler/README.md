@@ -9,7 +9,7 @@ gyy main.yc math.yc strings.hly tools.yaq -O2 -o app
 ./app
 ```
 
-The one `.yc` file is the entry program. All other source files are loaded as
+The first `.yc` file on the command line is the entry program. Any additional `.yc` files, along with `.hly` and `.yaq` files, are loaded as
 modules into the same global environment **before** the entry program runs. This
 allows the entry file to call procedures defined in any linked module. Module
 files are embedded in the executable; they do not need to be present when the
