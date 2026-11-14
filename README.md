@@ -2,7 +2,7 @@
 ## For Other Users
 YXX can be mixed with Y_, if you are looking for YXX, go to [this link](https://github.com/theprojectcreatorof2amthoughts/YPP).
 ## Introduction
-Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary and adds richer operators, extended string processing, numeric and geometry helpers, and expanded math built-ins.
+Y_ is a modular scripting language implemented in portable C11. It uses its original custom vocabulary and adds richer operators, extended string processing, numeric and geometry helpers, and expanded math built-ins.
 
 ## Build and run
 
@@ -23,7 +23,7 @@ make test-diagnostics
 
 Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
 
-The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. It also accepts textual LLVM IR (`.ll`). See [compiler/README.md](compiler/README.md).
+The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. It also accepts textual LLVM IR (`.ll`). See [the readme for the compiler and guidelines](https://github.com/theprojectcreatorof2amthoughts/Y_#guides-and-notes).
 
 ## Language
 
