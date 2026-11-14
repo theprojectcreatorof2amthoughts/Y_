@@ -30,9 +30,9 @@ static void usage(FILE *f) {
     fputs("gyy - Y_ native compiler (Clang backend)\n"
           "Usage: " DRIVER_NAME " <main.yc> [module.yc|module.hly|module.yaq ...] [options]\n"
           "       " DRIVER_NAME " <input.ll> [-o output] [-O0|-O1|-O2|-O3]\n"
-          "Options: --check, -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
+          "Options: --check, -c, -o FILE, " COMPILER_OPTION " PATH, -O0..-O3, -Wall, -Wextra,\n"
           "         --optimize=0..3, --warn-all, --warn-extra, --debug-info,\n"
-          "         -Wpedantic, -Werror, -Wno-WARNING, -Werror=WARNING, -g\n"
+          "         -c emits a relocatable object file, -Wpedantic, -Werror, -Wno-WARNING, -Werror=WARNING, -g\n"
           "Modules share one environment and are linked into one executable.\n", f);
 }
 static char *dupstr(const char *s) {
@@ -136,7 +136,7 @@ fail:
 }
 
 static int compile(const char*clang,const char*out,const char*opt,char **inputs,
-                   size_t count,int is_ir,const char **warnings,size_t warning_count,int debug) {
+                   size_t count,int is_ir,int compile_only,const char **warnings,size_t warning_count,int debug) {
     char *sources[MAX_INPUTS]={0};
     char *wrapper=NULL;
     size_t entry=0;
@@ -171,9 +171,10 @@ static int compile(const char*clang,const char*out,const char*opt,char **inputs,
     for(size_t i=0;i<warning_count;++i)args[a++]=(char*)warnings[i];
     if(!is_ir) {
         args[a++]="-I";args[a++]=inc;
-        args[a++]=wrapper;args[a++]=rt;args[a++]=mem;args[a++]=io;
-        args[a++]=(char*)GY_Y_EMBEDDED_SOURCE;args[a++]="-lm";
+        args[a++]=wrapper;
+        if(!compile_only){args[a++]=rt;args[a++]=mem;args[a++]=io;args[a++]=(char*)GY_Y_EMBEDDED_SOURCE;args[a++]="-lm";}
     } else args[a++]=inputs[0];
+    if(compile_only)args[a++]="-c";
     args[a++]="-o";args[a++]=(char*)out;args[a]=NULL;
     int result=run(args);
     if(wrapper)remove(wrapper);
@@ -188,13 +189,14 @@ fail:
 }
 int main(int argc,char**argv) {
     const char*clang=getenv(DEFAULT_COMPILER_ENV),*opt="-O0",*outarg=NULL;
-    char *inputs[MAX_INPUTS];size_t count=0;int check_only=0;
+    char *inputs[MAX_INPUTS];size_t count=0;int check_only=0,compile_only=0;
     const char *warnings[MAX_FLAGS];size_t warning_count=0;int debug=0;
     if(!clang||!*clang)clang=DEFAULT_COMPILER;
     for(int i=1;i<argc;++i) {
         if(!strcmp(argv[i],"--help")||!strcmp(argv[i],"-h")){usage(stdout);return 0;}
         else if(!strcmp(argv[i],"--version")){puts(DRIVER_VERSION);return 0;}
         else if(!strcmp(argv[i],"--check"))check_only=1;
+        else if(!strcmp(argv[i],"-c"))compile_only=1;
         else if(!strcmp(argv[i],"-o")){if(++i>=argc){fputs("gyy: error: missing filename after -o\n",stderr);return 2;}outarg=argv[i];}
         else if(!strcmp(argv[i],COMPILER_OPTION)){if(++i>=argc){fputs("gyy: error: missing path after --clang\n",stderr);return 2;}clang=argv[i];}
         else if(!strncmp(argv[i],"-O",2)){if(strcmp(argv[i],"-O0")&&strcmp(argv[i],"-O1")&&strcmp(argv[i],"-O2")&&strcmp(argv[i],"-O3")){fprintf(stderr,"gyy: error: invalid optimization option '%s'\n",argv[i]);return 2;}opt=argv[i];}
@@ -209,7 +211,7 @@ int main(int argc,char**argv) {
         else if(argv[i][0]=='-'){fprintf(stderr,"gyy: error: unrecognized command-line option '%s'\n",argv[i]);return 2;}
         else {
             if(count==MAX_INPUTS){fputs("gyy: error: too many input files\n",stderr);return 2;}
-            if(!has_extension(argv[i],".yc")&&!has_extension(argv[i],".hly")&&!has_extension(argv[i],".yaq")&&!has_extension(argv[i],".ll")) {
+            if(!has_extension(argv[i],".yc")&&!has_extension(argv[i],".hly")&&!has_extension(argv[i],".yaq")&&!has_extension(argv[i],".ll")&&!has_extension(argv[i],".o")) {
                 fprintf(stderr,"gyy: error: unsupported input file type '%s'\n",argv[i]);return 2;
             }
             inputs[count++]=argv[i];
@@ -217,6 +219,7 @@ int main(int argc,char**argv) {
     }
     if(count==0){usage(stderr);return 2;}
     int is_ir=has_extension(inputs[0],".ll");
+    if(has_extension(inputs[0],".o")){if(count!=1||check_only||compile_only){fputs("gyy: error: object input must be linked alone without -c or --check\\n",stderr);return 2;}char *inc=join(GY_Y_PROJECT_ROOT,"src"),*rt=join(GY_Y_PROJECT_ROOT,"src/y_.c"),*mem=join(GY_Y_PROJECT_ROOT,"src/memory.c"),*io=join(GY_Y_PROJECT_ROOT,"src/file_io.c");char *args[32];size_t a=0;args[a++]=(char*)clang;args[a++]="-I";args[a++]=inc;args[a++]=inputs[0];args[a++]=rt;args[a++]=mem;args[a++]=io;args[a++]=(char*)GY_Y_EMBEDDED_SOURCE;args[a++]="-lm";args[a++]="-o";char *owned_obj=NULL;if(!outarg){owned_obj=default_output(inputs[0]);outarg=owned_obj;}args[a++]=(char*)outarg;args[a]=NULL;int rc=run(args);free(inc);free(rt);free(mem);free(io);free(owned_obj);return rc;}
     if(is_ir&&count!=1){fputs("gyy: error: LLVM IR input cannot be mixed with Y_ source modules\n",stderr);return 2;}
     if(!is_ir) for(size_t i=0;i<count;++i) if(has_extension(inputs[i],".ll")) {
         fprintf(stderr,"gyy: error: cannot mix LLVM IR and Y_ source input '%s'\n",inputs[i]);return 2;
@@ -225,6 +228,7 @@ int main(int argc,char**argv) {
     char *owned=NULL;
     if(!outarg){owned=default_output(inputs[0]);outarg=owned;}
     if(!outarg){fputs("gyy: error: unable to determine output filename\n",stderr);return 2;}
-    int result=compile(clang,outarg,opt,inputs,count,is_ir,warnings,warning_count,debug);
+    if(compile_only&&!has_extension(outarg,".o")){size_t n=strlen(outarg)+3;char *obj=malloc(n);if(!obj){free(owned);return 2;}snprintf(obj,n,"%s.o",outarg);free(owned);owned=obj;outarg=owned;}
+    int result=compile(clang,outarg,opt,inputs,count,is_ir,compile_only,warnings,warning_count,debug);
     free(owned);return result;
 }
