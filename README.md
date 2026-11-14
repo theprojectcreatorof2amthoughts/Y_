@@ -23,7 +23,7 @@ make test-diagnostics
 
 Run `./ylang` without a file to start the interactive prompt. No third-party libraries are required.
 
-The interpreter executable is named `ylang` (not `y_`). `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. It also accepts textual LLVM IR (`.ll`). See [the readme for the compiler and guidelines](https://github.com/theprojectcreatorof2amthoughts/Y_#guides-and-notes).
+The interpreter executable is named `ylang`. `gyy` compiles Y_ source files (`.yc`) into native executables with Clang and the bundled Y_ runtime. It also accepts textual LLVM IR (`.ll`), because it uses LLVM in the first version. See [the readme for the compiler and guidelines](https://github.com/theprojectcreatorof2amthoughts/Y_#guides-and-notes).
 
 ## Language
 
