@@ -25,3 +25,7 @@ jobs:
           ./gyy --check examples/modern.yc
           ./gyy examples/modern.yc --optimize=2 --warn-all -o build/modern
           ./build/modern
+          ./gyy examples/modern.yc -c -o build/modern-module.o
+          test -f build/modern-module.o
+          ./gyy build/modern-module.o -o build/modern-object-linked
+          ./build/modern-object-linked
