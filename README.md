@@ -1,6 +1,6 @@
 # Y_
 ## For Other Users
-YPP is what you are looking for, repo in profile.
+YXX can be mixed with Y_, if you are looking for YXX, go to [this link](https://github.com/theprojectcreatorof2amthoughts/YPP).
 ## Introduction
 Y_ is a modular scripting language implemented in portable C11. It keeps its original custom vocabulary and adds richer operators, extended string processing, numeric and geometry helpers, and expanded math built-ins.
 
