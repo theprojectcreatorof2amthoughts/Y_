@@ -1,5 +1,5 @@
 ## A short Y_ program powered by an Adequit.
-!#adeq "examples/quicktools.yaq"
+!#adeq "quicktools.yaq"
 
 stash adjusted = quick_bound(125, 0, 100)
 stash result = quick_grade(86)
