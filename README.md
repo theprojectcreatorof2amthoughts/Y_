@@ -1,4 +1,9 @@
-# Y_
+<div align="center">
+  <img src="docs/logo.png" alt="Y_ Logo" width="140" />
+  <h1>Y_</h1>
+  <p>A modular scripting language implemented in portable C11.</p>
+</div>
+
 ## For Other Users
 YXX can be mixed with Y_, if you are looking for YXX, go to [this repository](https://github.com/theprojectcreatorof2amthoughts/YPP).
 ## Introduction
