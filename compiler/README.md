@@ -20,7 +20,7 @@ executable starts. Existing `!#libinc` and `!#adeq` directives still load their
 explicitly named external files at runtime. `!#inclib` continues to use the HLY
 libraries embedded when the Y_ project is built.
 
-`gyy` also accepts one textual LLVM IR `.ll` file by itself.
+`gyy` also accepts one textual LLVM IR `.ll` file by itself due to keeping this in the newest version of `gyy`, because it used LLVM when experimental.
 
 ## Diagnostics and warning options
 
